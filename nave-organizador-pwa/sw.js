@@ -1,5 +1,5 @@
 /* NAVE Organizador PWA - service worker */
-const CACHE = "nave-organizador-v5";
+const CACHE = "nave-organizador-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -42,13 +42,4 @@ self.addEventListener("fetch", (event) => {
       }).catch(() => caches.match("./index.html"));
     })
   );
-});
-
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
-    await self.clients.claim();
-  })());
 });

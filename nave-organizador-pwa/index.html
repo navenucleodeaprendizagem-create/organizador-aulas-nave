@@ -366,9 +366,9 @@
   const btnImport = el("btnImport");
   const btnClearSearch = el("btnClearSearch");
 
-  const weekSelect = document.getElementById("weekSelect");
-  const weekSummary = document.getElementById("weekSummary");
-  const btnPrintWeek = document.getElementById("btnPrintWeek");
+  const weekSelect = el("weekSelect");
+  const weekSummary = el("weekSummary");
+  const btnPrintWeek = el("btnPrintWeek");
 
   const toast = el("toast");
   const toastTitle = el("toastTitle");
@@ -399,21 +399,11 @@
     const parts = iso.split("-");
     if(parts.length !== 3) return iso;
     const [y,m,d] = parts;
-    return `${d}
-  function normalizeToISO(dateStr) {
-    // Accepts "YYYY-MM-DD" or "DD/MM/YYYY" and returns ISO "YYYY-MM-DD" when possible.
-    if(!dateStr) return "";
-    if(/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dateStr);
-    if(m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return dateStr; // fallback
-  }
-/${m}/${y}`;
+    return `${d}/${m}/${y}`;
   }
 
   
   function parseISO(iso) {
-    iso = normalizeToISO(iso);
     const [y,m,d] = (iso||"").split("-").map(n => parseInt(n,10));
     if(!y || !m || !d) return null;
     return new Date(Date.UTC(y, m-1, d));
@@ -473,7 +463,7 @@ function setTurmasForSegment() {
 
   function getFormData() {
     return {
-      date: normalizeToISO(date.value),
+      date: date.value,
       segment: segment.value,
       turma: turma.value,
       aula: aula.value,
@@ -515,8 +505,8 @@ function setTurmasForSegment() {
     }
     updateKeyPreview();
     renderList();
-    if(weekSelect) buildWeekOptions();
-    if(weekSelect) buildWeekOptions();
+    buildWeekOptions();
+    buildWeekOptions();
   buildWeekOptions();
   }
 
@@ -624,7 +614,6 @@ function setTurmasForSegment() {
 
 
   function buildWeekOptions() {
-    if(!weekSelect || !weekSummary) return;
     const store = loadStore();
     const entries = Object.values(store);
 
@@ -646,7 +635,6 @@ function setTurmasForSegment() {
   }
 
   function renderWeekSummary() {
-    if(!weekSelect || !weekSummary) return;
     const mondayISO = weekSelect.value;
     if(!mondayISO) {
       weekSummary.innerHTML = `<div class="meta">Nenhum dado para resumo semanal.</div>`;
@@ -658,9 +646,9 @@ function setTurmasForSegment() {
     const store = loadStore();
     const entries = Object.values(store)
       .filter(e => e && e.date && e.turma && e.aula)
-      .filter(e => { const iso = normalizeToISO(e.date); return iso >= mondayISO && iso <= satISO; })
+      .filter(e => e.date >= mondayISO && e.date <= satISO)
       .filter(e => (e.realizado||"").trim().length > 0)
-      .sort((a,b) => normalizeToISO(a.date||"").localeCompare(normalizeToISO(b.date||"")) || (Number(a.aula)-Number(b.aula)));
+      .sort((a,b) => (a.date||"").localeCompare(b.date||"") || (Number(a.aula)-Number(b.aula)));
 
     if(entries.length === 0) {
       weekSummary.innerHTML = `<div class="meta">Sem registros realizados entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
@@ -680,7 +668,7 @@ function setTurmasForSegment() {
       const aulasTxt = aulas.map(a => `Aula ${a}`).join(", ");
 
       const realizedLines = arr.map(x => {
-        const d = humanDate(normalizeToISO(x.date));
+        const d = humanDate(x.date);
         const a = `Aula ${x.aula}`;
         const r = (x.realizado||"").trim();
         const safe = r ? r.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>") : "—";
@@ -707,7 +695,6 @@ function setTurmasForSegment() {
   }
 
   function printWeekSummary() {
-    if(!weekSelect || !weekSummary || !btnPrintWeek) return;
     const mondayISO = weekSelect.value;
     if(!mondayISO) return showToast("Sem semana", "Selecione uma semana para imprimir.");
 
@@ -775,7 +762,7 @@ function setTurmasForSegment() {
           const store = loadStore();
           saveStore({...store, ...incoming});
           renderList();
-          if(weekSelect) buildWeekOptions();
+          buildWeekOptions();
           updateKeyPreview();
           showToast("Importado", "Registros mesclados com sucesso.");
         } catch(e) {
@@ -807,8 +794,8 @@ function setTurmasForSegment() {
   search.addEventListener("input", renderList);
   btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
 
-  if(weekSelect) weekSelect.addEventListener("change", renderWeekSummary);
-  if(btnPrintWeek) btnPrintWeek.addEventListener("click", printWeekSummary);
+  weekSelect.addEventListener("change", renderWeekSummary);
+  btnPrintWeek.addEventListener("click", printWeekSummary);
 
 })();
 </script>
