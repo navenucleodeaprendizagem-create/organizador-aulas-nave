@@ -657,11 +657,10 @@ function setTurmasForSegment() {
     const entries = Object.values(store)
       .filter(e => e && e.date && e.turma && e.aula)
       .filter(e => e.date >= mondayISO && e.date <= satISO)
-      .filter(e => (e.realizado||"").trim().length > 0)
       .sort((a,b) => (a.date||"").localeCompare(b.date||"") || (Number(a.aula)-Number(b.aula)));
 
     if(entries.length === 0) {
-      weekSummary.innerHTML = `<div class="meta">Sem registros realizados entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
+      weekSummary.innerHTML = `<div class="meta">Sem registros entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
       return;
     }
 
@@ -687,7 +686,7 @@ function setTurmasForSegment() {
         const a = `Aula ${x.aula}`;
         const r = (x.realizado||"").trim();
         const safe = r ? r.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>") : "—";
-        return `<div class="meta" style="margin-top:8px;"><b>${d} • ${a}</b><div style="margin-top:4px;">${safe}</div></div>`;
+        return `<div class="meta" style="margin-top:8px;"><b>Data:</b> ${d} • <b>Aula:</b> ${x.aula}<div style="margin-top:4px;"><b>Realizado:</b><div style="margin-top:3px;">${safe}</div></div></div>`;
       }).join("");
 
       blocks.push(`
