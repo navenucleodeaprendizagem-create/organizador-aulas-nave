@@ -413,6 +413,16 @@ window.addEventListener("load", () => {
     return `${d}/${m}/${y}`;
   }
 
+  // Segment label helper used across the app (list, weekly summary, printing)
+  function segmentLabel(seg) {
+    const v = String(seg || "").trim().toUpperCase();
+    if (v === "2ANO" || v === "2º ANO" || v === "2O ANO" || v === "2° ANO" || v === "2") return "2º Ano";
+    if (v === "3ANO" || v === "3º ANO" || v === "3O ANO" || v === "3° ANO" || v === "3") return "3º Ano";
+    if (v === "PREVEST" || v === "PRÉ" || v === "PRE" || v === "PRE-VEST" || v === "PRÉ-VEST" ) return "Prevest";
+    // If it's already a friendly label, keep it.
+    return String(seg || "").trim() || "—";
+  }
+
   function normalizeToISO(dateStr) {
     // Accepts "YYYY-MM-DD" or "DD/MM/YYYY" and returns ISO "YYYY-MM-DD" when possible.
     const s = (dateStr||"").trim();
@@ -594,11 +604,10 @@ function setTurmasForSegment() {
       return;
     }
 
-    const segLabel = (s) => s==="2ANO" ? "2º Ano" : (s==="3ANO" ? "3º Ano" : "Pré-vest");
 
     items.innerHTML = filtered.map(e => {
       const d = humanDate(e.date||"");
-      const top = `${d} • ${segLabel(e.segment)} • ${e.turma} • Aula ${e.aula}`;
+      const top = `${d} • ${segmentLabel(e.segment)} • ${e.turma} • Aula ${e.aula}`;
       const snippet = (txt) => {
         const t = (txt||"").trim().replace(/\s+/g," ");
         return t.length > 120 ? t.slice(0,120) + "…" : (t || "—");
@@ -617,7 +626,7 @@ function setTurmasForSegment() {
           <div class="tag"><b>${top}</b></div>
           <div class="tag" style="opacity:.9">Atualizado: ${updated}</div>
         </div>
-        <div class="meta"><b>Ano:</b> ${segLabel(e.segment)} • <b>Turma:</b> ${e.turma} • <b>Data:</b> ${d} • <b>Aula:</b> ${e.aula}</div>
+        <div class="meta"><b>Ano:</b> ${segmentLabel(e.segment)} • <b>Turma:</b> ${e.turma} • <b>Data:</b> ${d} • <b>Aula:</b> ${e.aula}</div>
         <div class="meta" style="margin-top:6px;"><b>Realizado:</b><div style="margin-top:4px;">${snippetMultiline(e.realizado)}</div></div>
         <div class="btns">
           <button class="primary" data-load="${e.key}">Carregar</button>
@@ -717,7 +726,7 @@ function setTurmasForSegment() {
 
       blocks.push(`<div class="weekblock">
           <div class="row">
-            <div class="tag"><b>${segLabel(g.seg)} — ${g.turma}</b></div>
+            <div class="tag"><b>${segmentLabel(g.seg)} — ${g.turma}</b></div>
           </div>
           ${lines}
         </div>`);
