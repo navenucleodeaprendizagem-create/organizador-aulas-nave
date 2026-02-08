@@ -409,7 +409,9 @@ window.addEventListener("load", () => {
     const parts = iso.split("-");
     if(parts.length !== 3) return iso;
     const [y,m,d] = parts;
-    return `${d}
+    return `${d}/${m}/${y}`;
+  }
+
   function normalizeToISO(dateStr) {
     // Accepts "YYYY-MM-DD" or "DD/MM/YYYY" and returns ISO "YYYY-MM-DD" when possible.
     if(!dateStr) return "";
@@ -418,10 +420,7 @@ window.addEventListener("load", () => {
     if(m) return `${m[3]}-${m[2]}-${m[1]}`;
     return dateStr;
   }
-/${m}/${y}`;
-  }
 
-  
   function parseISO(iso) {
     iso = normalizeToISO(iso);
     const [y,m,d] = (iso||"").split("-").map(n => parseInt(n,10));
