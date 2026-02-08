@@ -13,7 +13,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <style>
-    :root{
+          .weekblock{background: rgba(255,255,255,.75);border:1px solid rgba(20,40,80,.10);border-radius:14px;padding:12px 12px;margin-top:10px;}
+:root{
       /* Light layout */
       --bg:#F6F7FB;
       --card:#FFFFFF;
@@ -422,11 +423,15 @@ window.addEventListener("load", () => {
     return s;
   }
 
-  function parseISO(iso) {
+  function isoToUTCDate(iso) {
     iso = normalizeToISO(iso);
-    const [y,m,d] = (iso||"").split("-").map(n => parseInt(n,10));
-    if(!y || !m || !d) return null;
-    return new Date(Date.UTC(y, m-1, d));
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||"");
+    if(!m) return null;
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    return new Date(Date.UTC(y, mo-1, d));
+  }
+  function parseISO(iso) {
+    return isoToUTCDate(iso);
   }
   function toISO(dt) {
     const y = dt.getUTCFullYear();
@@ -434,13 +439,12 @@ window.addEventListener("load", () => {
     const d = String(dt.getUTCDate()).padStart(2,"0");
     return `${y}-${m}-${d}`;
   }
-  function weekStartMonday(iso) {
-    const dt = parseISO(iso);
-    if(!dt) return null;
-    const day = dt.getUTCDay(); // 0..6
-    const offset = (day === 0) ? 6 : (day - 1);
-    dt.setUTCDate(dt.getUTCDate() - offset);
-    return dt;
+  function weekStartMonday(dateStr) {
+    const dt = isoToUTCDate(dateStr);
+    if(!dt) return "";
+    const dow = (dt.getUTCDay() + 6) % 7; // Monday=0
+    dt.setUTCDate(dt.getUTCDate() - dow);
+    return dt.toISOString().slice(0,10);
   }
   function weekRangeLabel(mondayISO) {
     const mon = parseISO(mondayISO);
@@ -660,67 +664,65 @@ function setTurmasForSegment() {
   }
 
   function renderWeekSummary() {
-    const mondayISO = weekSelect.value;
-    if(!mondayISO) {
-      weekSummary.innerHTML = `<div class="meta">Nenhum dado para resumo semanal.</div>`;
-      return;
-    }
-    const sat = parseISO(mondayISO); sat.setUTCDate(sat.getUTCDate()+5);
-    const satISO = toISO(sat);
+    if(!weekSelect || !weekSummary) return;
 
     const store = loadStore();
-    const entries = Object.values(store)
-      .filter(e => e && e.date && e.turma && e.aula)
-      .filter(e => { const iso = normalizeToISO(e.date); return iso >= mondayISO && iso <= satISO; })
-      .sort((a,b) => normalizeToISO(a.date||"").localeCompare(normalizeToISO(b.date||"")) || (Number(a.aula)-Number(b.aula)));
+    const all = Object.values(store||{});
+    const mondayISO = (weekSelect.value||"").trim();
+    if(!mondayISO) { weekSummary.innerHTML = '<div class="meta">Nenhuma semana encontrada.</div>'; return; }
+
+    const dtSat = isoToUTCDate(mondayISO);
+    dtSat.setUTCDate(dtSat.getUTCDate() + 5);
+    const satISO = dtSat.toISOString().slice(0,10);
+
+    const entries = all
+      .filter(e => e && e.date)
+      .map(e => ({...e, _iso: normalizeToISO(e.date)}))
+      .filter(e => e._iso >= mondayISO && e._iso <= satISO)
+      .sort((a,b) => (a.segment||"").localeCompare(b.segment||"") || (a.turma||"").localeCompare(b.turma||"") || (Number(a.aula)-Number(b.aula)) || a._iso.localeCompare(b._iso));
 
     if(entries.length === 0) {
-      weekSummary.innerHTML = `<div class="meta">Sem registros entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
+      weekSummary.innerHTML = `Sem registros entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.`;
       return;
     }
 
-    const byTurma = new Map();
+    const groups = new Map();
     for(const e of entries) {
       const seg = (e.segment||"").toString();
-      const t = e.turma;
-      const key = `${seg}||${t}`;
-      if(!byTurma.has(key)) byTurma.set(key, { seg, turma: t, items: [] });
-      byTurma.get(key).items.push(e);
+      const turma = (e.turma||"").toString();
+      const key = `${seg}||${turma}`;
+      if(!groups.has(key)) groups.set(key, { seg, turma, items: [] });
+      groups.get(key).items.push(e);
     }
 
     const blocks = [];
-    for(const obj of Array.from(byTurma.values()).sort((a,b)=> (a.seg||"").localeCompare(b.seg||"") || (a.turma||"").localeCompare(b.turma||""))) {
-      const t = obj.turma;
-      const seg = obj.seg;
-      const arr = obj.items;
-      const aulas = Array.from(new Set(arr.map(x => Number(x.aula)))).sort((a,b)=>a-b);
-      const aulasTxt = aulas.map(a => `Aula ${a}`).join(", ");
+    for(const g of Array.from(groups.values()).sort((a,b)=> (a.seg||"").localeCompare(b.seg||"") || (a.turma||"").localeCompare(b.turma||""))) {
+      const lines = g.items
+        .slice()
+        .sort((a,b)=> Number(a.aula)-Number(b.aula) || a._iso.localeCompare(b._iso))
+        .map(x => {
+          const ddmm = humanDate(x._iso).slice(0,5);
+          const real = ((x.realizado||"").trim() ? (x.realizado||"").trim() : "—");
+          const safe = real
+            .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+            .replace(/\n/g,"<br>");
+          return `<div class="meta" style="margin-top:10px;">
+                    <b>Aula ${x.aula} (${ddmm}):</b>
+                    <div style="margin-top:4px;">${safe}</div>
+                  </div>`;
+        }).join("");
 
-      const realizedLines = arr.map(x => {
-        const d = humanDate(normalizeToISO(x.date));
-        const a = `Aula ${x.aula}`;
-        const r = (x.realizado||"").trim();
-        const safe = r ? r.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>") : "—";
-        return `<div class="meta" style="margin-top:8px;"><b>Data:</b> ${d} • <b>Aula:</b> ${x.aula}<div style="margin-top:4px;"><b>Realizado:</b><div style="margin-top:3px;">${safe}</div></div></div>`;
-      }).join("");
-
-      blocks.push(`
-        <div class="item" style="margin-top:10px;">
+      blocks.push(`<div class="weekblock">
           <div class="row">
-            <div class="tag"><b>Ano:</b> ${segLabel(seg)} • <b>Turma:</b> ${t}</div>
-            <div class="tag" style="opacity:.9">${aulasTxt || "—"}</div>
+            <div class="tag"><b>${segLabel(g.seg)} — ${g.turma}</b></div>
           </div>
-          ${realizedLines}
-        </div>
-      `);
+          ${lines}
+        </div>`);
     }
 
-    weekSummary.innerHTML = `
-      <div class="meta" style="margin-bottom:8px;">
-        <b>Semana:</b> ${weekRangeLabel(mondayISO)} • <b>Turmas:</b> ${byTurma.size}
-      </div>
-      ${blocks.join("")}
-    `;
+    weekSummary.innerHTML = `<div class="meta" style="margin-bottom:10px;">
+        <b>Semana:</b> ${humanDate(mondayISO)} a ${humanDate(satISO)} • <b>Turmas:</b> ${groups.size}
+      </div>` + blocks.join("");
   }
 
   function printWeekSummary() {
