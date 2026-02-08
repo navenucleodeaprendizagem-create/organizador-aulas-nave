@@ -302,10 +302,23 @@
           <div class="tag" id="countTag">0</div>
         </div>
 
+        
+        <div class="search" style="flex-direction:column; align-items:stretch; gap:10px;">
+          <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div style="flex:1; min-width:240px;">
+              <label for="weekSelect" style="margin:0 0 6px 2px;">Resumo da semana (segunda a sábado)</label>
+              <select id="weekSelect"></select>
+            </div>
+            <button id="btnPrintWeek" class="primary" style="white-space:nowrap;">Imprimir resumo</button>
+          </div>
+          <div id="weekSummary" class="item" style="margin:0; background:rgba(2,6,23,.02);"></div>
+        </div>
+
         <div class="search">
           <input id="search" type="text" placeholder="Filtrar por data, turma, conteúdo, texto..." />
           <button id="btnClearSearch">Limpar</button>
         </div>
+
 
         <div class="items" id="items"></div>
       </div>
@@ -353,6 +366,10 @@
   const btnImport = el("btnImport");
   const btnClearSearch = el("btnClearSearch");
 
+  const weekSelect = el("weekSelect");
+  const weekSummary = el("weekSummary");
+  const btnPrintWeek = el("btnPrintWeek");
+
   const toast = el("toast");
   const toastTitle = el("toastTitle");
   const toastMsg = el("toastMsg");
@@ -385,7 +402,39 @@
     return `${d}/${m}/${y}`;
   }
 
-  function setTurmasForSegment() {
+  
+  function parseISO(iso) {
+    const [y,m,d] = (iso||"").split("-").map(n => parseInt(n,10));
+    if(!y || !m || !d) return null;
+    return new Date(Date.UTC(y, m-1, d));
+  }
+  function toISO(dt) {
+    const y = dt.getUTCFullYear();
+    const m = String(dt.getUTCMonth()+1).padStart(2,"0");
+    const d = String(dt.getUTCDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+  }
+  function weekStartMonday(iso) {
+    const dt = parseISO(iso);
+    if(!dt) return null;
+    const day = dt.getUTCDay(); // 0..6
+    const offset = (day === 0) ? 6 : (day - 1);
+    dt.setUTCDate(dt.getUTCDate() - offset);
+    return dt;
+  }
+  function weekRangeLabel(mondayISO) {
+    const mon = parseISO(mondayISO);
+    const sat = parseISO(mondayISO);
+    sat.setUTCDate(sat.getUTCDate() + 5);
+    return `${humanDate(mondayISO)} a ${humanDate(toISO(sat))}`;
+  }
+  function isMonToSat(iso) {
+    const dt = parseISO(iso);
+    if(!dt) return false;
+    const day = dt.getUTCDay();
+    return day >= 1 && day <= 6;
+  }
+function setTurmasForSegment() {
     const list = TURMAS[segment.value] || [];
     const current = turma.value;
     turma.innerHTML = list.map(t => `<option value="${t}">${t}</option>`).join("");
@@ -456,6 +505,9 @@
     }
     updateKeyPreview();
     renderList();
+    buildWeekOptions();
+    buildWeekOptions();
+  buildWeekOptions();
   }
 
   function saveCurrent() {
@@ -560,6 +612,128 @@
     });
   }
 
+
+  function buildWeekOptions() {
+    const store = loadStore();
+    const entries = Object.values(store);
+
+    const weeks = new Set();
+    for(const e of entries) {
+      if(!e || !e.date) continue;
+      if(!isMonToSat(e.date)) continue;
+      const mon = weekStartMonday(e.date);
+      if(!mon) continue;
+      weeks.add(toISO(mon));
+    }
+
+    const list = Array.from(weeks).sort((a,b) => b.localeCompare(a));
+    weekSelect.innerHTML = list.length
+      ? list.map(w => `<option value="${w}">${weekRangeLabel(w)}</option>`).join("")
+      : `<option value="">Nenhuma semana encontrada</option>`;
+
+    if(list.length) weekSelect.value = list[0];
+    renderWeekSummary();
+  }
+
+  function renderWeekSummary() {
+    const mondayISO = weekSelect.value;
+    if(!mondayISO) {
+      weekSummary.innerHTML = `<div class="meta">Nenhum dado para resumo semanal.</div>`;
+      return;
+    }
+    const sat = parseISO(mondayISO); sat.setUTCDate(sat.getUTCDate()+5);
+    const satISO = toISO(sat);
+
+    const store = loadStore();
+    const entries = Object.values(store)
+      .filter(e => e && e.date && e.turma && e.aula)
+      .filter(e => e.date >= mondayISO && e.date <= satISO)
+      .filter(e => (e.realizado||"").trim().length > 0)
+      .sort((a,b) => (a.date||"").localeCompare(b.date||"") || (Number(a.aula)-Number(b.aula)));
+
+    if(entries.length === 0) {
+      weekSummary.innerHTML = `<div class="meta">Sem registros realizados entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
+      return;
+    }
+
+    const byTurma = new Map();
+    for(const e of entries) {
+      const t = e.turma;
+      if(!byTurma.has(t)) byTurma.set(t, []);
+      byTurma.get(t).push(e);
+    }
+
+    const blocks = [];
+    for(const [t, arr] of Array.from(byTurma.entries()).sort((a,b)=>a[0].localeCompare(b[0]))) {
+      const aulas = Array.from(new Set(arr.map(x => Number(x.aula)))).sort((a,b)=>a-b);
+      const aulasTxt = aulas.map(a => `Aula ${a}`).join(", ");
+
+      const realizedLines = arr.map(x => {
+        const d = humanDate(x.date);
+        const a = `Aula ${x.aula}`;
+        const r = (x.realizado||"").trim();
+        const safe = r ? r.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>") : "—";
+        return `<div class="meta" style="margin-top:8px;"><b>${d} • ${a}</b><div style="margin-top:4px;">${safe}</div></div>`;
+      }).join("");
+
+      blocks.push(`
+        <div class="item" style="margin-top:10px;">
+          <div class="row">
+            <div class="tag"><b>Turma:</b> ${t}</div>
+            <div class="tag" style="opacity:.9">${aulasTxt || "—"}</div>
+          </div>
+          ${realizedLines}
+        </div>
+      `);
+    }
+
+    weekSummary.innerHTML = `
+      <div class="meta" style="margin-bottom:8px;">
+        <b>Semana:</b> ${weekRangeLabel(mondayISO)} • <b>Turmas:</b> ${byTurma.size}
+      </div>
+      ${blocks.join("")}
+    `;
+  }
+
+  function printWeekSummary() {
+    const mondayISO = weekSelect.value;
+    if(!mondayISO) return showToast("Sem semana", "Selecione uma semana para imprimir.");
+
+    const htmlToPrint = `
+      <!doctype html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Resumo semanal — Organizador de Aulas (NAVE)</title>
+        <style>
+          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; color:#111; }
+          h1 { font-size: 16px; margin: 0 0 10px; }
+          .sub { color:#444; font-size: 12px; margin-bottom: 14px; }
+          .card { border:1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
+          .row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+          .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; background:#f4f4f5; border:1px solid #e4e4e7; }
+          .meta { font-size: 12px; color:#333; line-height:1.35; }
+          .meta b { color:#111; }
+          @media print { body{ margin:0 } }
+        </style>
+      </head>
+      <body>
+        <h1>Resumo semanal — Organizador de Aulas (NAVE)</h1>
+        <div class="sub"><b>Semana:</b> ${weekRangeLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
+        <div class="card">${weekSummary.innerHTML}</div>
+        <div class="sub" style="margin-top:14px;">Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.</div>
+        <script>window.onload = () => setTimeout(() => window.print(), 250);<\/script>
+      </body>
+      </html>
+    `;
+    const w = window.open("", "_blank");
+    if(!w) return showToast("Popup bloqueado", "Permita popups para imprimir o resumo.");
+    w.document.open();
+    w.document.write(htmlToPrint);
+    w.document.close();
+  }
+
   function exportJSON() {
     const store = loadStore();
     const blob = new Blob([JSON.stringify(store, null, 2)], {type:"application/json"});
@@ -589,6 +763,7 @@
           const store = loadStore();
           saveStore({...store, ...incoming});
           renderList();
+          buildWeekOptions();
           updateKeyPreview();
           showToast("Importado", "Registros mesclados com sucesso.");
         } catch(e) {
@@ -619,6 +794,10 @@
 
   search.addEventListener("input", renderList);
   btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
+
+  weekSelect.addEventListener("change", renderWeekSummary);
+  btnPrintWeek.addEventListener("click", printWeekSummary);
+
 })();
 </script>
 </body>
