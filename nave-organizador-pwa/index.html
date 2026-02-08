@@ -434,6 +434,9 @@ window.addEventListener("load", () => {
     return isoToUTCDate(iso);
   }
   function toISO(dt) {
+    // Accepts Date or ISO string and returns ISO "YYYY-MM-DD"
+    if(!dt) return "";
+    if(typeof dt === "string") return normalizeToISO(dt);
     const y = dt.getUTCFullYear();
     const m = String(dt.getUTCMonth()+1).padStart(2,"0");
     const d = String(dt.getUTCDate()).padStart(2,"0");
@@ -651,7 +654,7 @@ function setTurmasForSegment() {
       if(!e || !e.date) continue;
       const mon = weekStartMonday(normalizeToISO(e.date));
       if(!mon) continue;
-      weeks.add(toISO(mon));
+      weeks.add(mon);
     }
 
     const list = Array.from(weeks).sort((a,b) => b.localeCompare(a));
