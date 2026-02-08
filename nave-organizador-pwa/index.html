@@ -217,7 +217,6 @@
         </div>
       </div>
       <div class="actions">
-        <button class="primary" id="btnSave">Salvar</button>
         <button id="btnNew" class="ghost">Novo</button>
         <button id="btnPrint">Imprimir</button>
         <button id="btnExport">Exportar</button>
@@ -285,6 +284,10 @@
               <label for="realizado">Realizado</label>
               <textarea id="realizado" placeholder="O que foi feito em sala..."></textarea>
             </div>
+            <div class="span-12" style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:-2px;">
+              <button class="primary" id="btnSave" type="button" style="min-width:160px;">Salvar</button>
+            </div>
+
 
             <div class="span-12 hint">
               Salvamento por chave <b>Data + Segmento + Turma + Aula</b>. Ao mudar data/turma/aula, carrega automaticamente (se existir).
@@ -578,20 +581,27 @@ function setTurmasForSegment() {
         const t = (txt||"").trim().replace(/\s+/g," ");
         return t.length > 120 ? t.slice(0,120) + "…" : (t || "—");
       };
+      const snippetMultiline = (txt) => {
+        const t = (txt||"").trim();
+        if(!t) return "—";
+        const safe = t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        const withBr = safe.replace(/\n/g,"<br>");
+        return withBr.length > 900 ? withBr.slice(0,900) + "…" : withBr;
+      };
+
       const updated = e.updatedAt ? new Date(e.updatedAt).toLocaleString("pt-BR") : "—";
       return `<div class="item">
         <div class="row">
-          <div class="tag">${top}</div>
+          <div class="tag"><b>${top}</b></div>
           <div class="tag" style="opacity:.9">Atualizado: ${updated}</div>
         </div>
-        <div class="meta"><b>Conteúdo:</b> ${e.conteudo || "—"}</div>
-        <div class="meta"><b>Planejado:</b> ${snippet(e.planejado)}</div>
-        <div class="meta"><b>Realizado:</b> ${snippet(e.realizado)}</div>
+        <div class="meta"><b>Ano:</b> ${segLabel(e.segment)} • <b>Turma:</b> ${e.turma} • <b>Data:</b> ${d} • <b>Aula:</b> ${e.aula}</div>
+        <div class="meta" style="margin-top:6px;"><b>Realizado:</b><div style="margin-top:4px;">${snippetMultiline(e.realizado)}</div></div>
         <div class="btns">
           <button class="primary" data-load="${e.key}">Carregar</button>
           <button class="danger" data-del="${e.key}">Excluir</button>
         </div>
-      </div>`;
+      </div>`;`;
     }).join("");
 
     items.querySelectorAll("button[data-load]").forEach(b => {
