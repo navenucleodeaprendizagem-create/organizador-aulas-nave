@@ -1,5 +1,5 @@
 /* NAVE Organizador PWA - service worker */
-const CACHE = "nave-organizador-v10";
+const CACHE = "nave-organizador-v11";
 const ASSETS = [
   "./",
   "./index.html",

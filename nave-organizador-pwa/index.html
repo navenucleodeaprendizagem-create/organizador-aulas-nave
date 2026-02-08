@@ -339,7 +339,14 @@
 (() => {
   // Register SW (offline)
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
+    window.addEventListener("error", (e) => {
+  try { showToast("Erro no app", String(e.message||e.error||"erro")); } catch(_) {}
+});
+window.addEventListener("unhandledrejection", (e) => {
+  try { showToast("Erro no app", String(e.reason||"erro")); } catch(_) {}
+});
+
+window.addEventListener("load", () => {
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     });
   }
@@ -809,7 +816,12 @@ function setTurmasForSegment() {
   [date, turma, aula].forEach(x => x.addEventListener("change", tryAutoLoad));
   [conteudo, planejado, realizado].forEach(x => x.addEventListener("input", updateKeyPreview));
 
-  btnSave.addEventListener("click", saveCurrent);
+  if(btnSave) btnSave.addEventListener("click", (ev) => { ev.preventDefault(); saveCurrent(); });
+  // Fallback (iOS cache/DOM race): delegated click handler
+  document.addEventListener("click", (ev) => {
+    const t = ev.target;
+    if(t && t.id === "btnSave") { ev.preventDefault(); saveCurrent(); }
+  });
   btnNew.addEventListener("click", () => { if(confirm("Novo registro (limpar Planejado/Realizado e data de hoje)?")) newRecord(); });
   btnPrint.addEventListener("click", () => { updateKeyPreview(); window.print(); });
   btnExport.addEventListener("click", exportJSON);
