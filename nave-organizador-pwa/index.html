@@ -402,11 +402,21 @@
     const parts = iso.split("-");
     if(parts.length !== 3) return iso;
     const [y,m,d] = parts;
-    return `${d}/${m}/${y}`;
+    return `${d}
+  function normalizeToISO(dateStr) {
+    // Accepts "YYYY-MM-DD" or "DD/MM/YYYY" and returns ISO "YYYY-MM-DD" when possible.
+    if(!dateStr) return "";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dateStr);
+    if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return dateStr;
+  }
+/${m}/${y}`;
   }
 
   
   function parseISO(iso) {
+    iso = normalizeToISO(iso);
     const [y,m,d] = (iso||"").split("-").map(n => parseInt(n,10));
     if(!y || !m || !d) return null;
     return new Date(Date.UTC(y, m-1, d));
@@ -466,7 +476,7 @@ function setTurmasForSegment() {
 
   function getFormData() {
     return {
-      date: date.value,
+      date: normalizeToISO(date.value),
       segment: segment.value,
       turma: turma.value,
       aula: aula.value,
@@ -509,8 +519,6 @@ function setTurmasForSegment() {
     updateKeyPreview();
     renderList();
     buildWeekOptions();
-    buildWeekOptions();
-  buildWeekOptions();
   }
 
   function saveCurrent() {
@@ -630,7 +638,7 @@ function setTurmasForSegment() {
     const weeks = new Set();
     for(const e of entries) {
       if(!e || !e.date) continue;
-      const mon = weekStartMonday(e.date);
+      const mon = weekStartMonday(normalizeToISO(e.date));
       if(!mon) continue;
       weeks.add(toISO(mon));
     }
@@ -656,8 +664,8 @@ function setTurmasForSegment() {
     const store = loadStore();
     const entries = Object.values(store)
       .filter(e => e && e.date && e.turma && e.aula)
-      .filter(e => e.date >= mondayISO && e.date <= satISO)
-      .sort((a,b) => (a.date||"").localeCompare(b.date||"") || (Number(a.aula)-Number(b.aula)));
+      .filter(e => { const iso = normalizeToISO(e.date); return iso >= mondayISO && iso <= satISO; })
+      .sort((a,b) => normalizeToISO(a.date||"").localeCompare(normalizeToISO(b.date||"")) || (Number(a.aula)-Number(b.aula)));
 
     if(entries.length === 0) {
       weekSummary.innerHTML = `<div class="meta">Sem registros entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.</div>`;
@@ -682,7 +690,7 @@ function setTurmasForSegment() {
       const aulasTxt = aulas.map(a => `Aula ${a}`).join(", ");
 
       const realizedLines = arr.map(x => {
-        const d = humanDate(x.date);
+        const d = humanDate(normalizeToISO(x.date));
         const a = `Aula ${x.aula}`;
         const r = (x.realizado||"").trim();
         const safe = r ? r.replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>") : "—";
@@ -794,6 +802,8 @@ function setTurmasForSegment() {
   updateKeyPreview();
   renderList();
   tryAutoLoad();
+  // Ensure weekly summary renders after initial load
+  setTimeout(() => { try { buildWeekOptions(); renderWeekSummary(); } catch(e){} }, 0);
 
   segment.addEventListener("change", () => { setTurmasForSegment(); tryAutoLoad(); });
   [date, turma, aula].forEach(x => x.addEventListener("change", tryAutoLoad));
