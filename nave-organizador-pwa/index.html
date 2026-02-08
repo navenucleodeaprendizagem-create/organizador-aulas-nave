@@ -620,7 +620,6 @@ function setTurmasForSegment() {
     const weeks = new Set();
     for(const e of entries) {
       if(!e || !e.date) continue;
-      if(!isMonToSat(e.date)) continue;
       const mon = weekStartMonday(e.date);
       if(!mon) continue;
       weeks.add(toISO(mon));
