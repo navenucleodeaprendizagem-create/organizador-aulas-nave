@@ -366,9 +366,9 @@
   const btnImport = el("btnImport");
   const btnClearSearch = el("btnClearSearch");
 
-  const weekSelect = el("weekSelect");
-  const weekSummary = el("weekSummary");
-  const btnPrintWeek = el("btnPrintWeek");
+  const weekSelect = document.getElementById("weekSelect");
+  const weekSummary = document.getElementById("weekSummary");
+  const btnPrintWeek = document.getElementById("btnPrintWeek");
 
   const toast = el("toast");
   const toastTitle = el("toastTitle");
@@ -515,8 +515,8 @@ function setTurmasForSegment() {
     }
     updateKeyPreview();
     renderList();
-    buildWeekOptions();
-    buildWeekOptions();
+    if(weekSelect) buildWeekOptions();
+    if(weekSelect) buildWeekOptions();
   buildWeekOptions();
   }
 
@@ -624,6 +624,7 @@ function setTurmasForSegment() {
 
 
   function buildWeekOptions() {
+    if(!weekSelect || !weekSummary) return;
     const store = loadStore();
     const entries = Object.values(store);
 
@@ -645,6 +646,7 @@ function setTurmasForSegment() {
   }
 
   function renderWeekSummary() {
+    if(!weekSelect || !weekSummary) return;
     const mondayISO = weekSelect.value;
     if(!mondayISO) {
       weekSummary.innerHTML = `<div class="meta">Nenhum dado para resumo semanal.</div>`;
@@ -705,6 +707,7 @@ function setTurmasForSegment() {
   }
 
   function printWeekSummary() {
+    if(!weekSelect || !weekSummary || !btnPrintWeek) return;
     const mondayISO = weekSelect.value;
     if(!mondayISO) return showToast("Sem semana", "Selecione uma semana para imprimir.");
 
@@ -772,7 +775,7 @@ function setTurmasForSegment() {
           const store = loadStore();
           saveStore({...store, ...incoming});
           renderList();
-          buildWeekOptions();
+          if(weekSelect) buildWeekOptions();
           updateKeyPreview();
           showToast("Importado", "Registros mesclados com sucesso.");
         } catch(e) {
@@ -804,8 +807,8 @@ function setTurmasForSegment() {
   search.addEventListener("input", renderList);
   btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
 
-  weekSelect.addEventListener("change", renderWeekSummary);
-  btnPrintWeek.addEventListener("click", printWeekSummary);
+  if(weekSelect) weekSelect.addEventListener("change", renderWeekSummary);
+  if(btnPrintWeek) btnPrintWeek.addEventListener("click", printWeekSummary);
 
 })();
 </script>
