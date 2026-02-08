@@ -667,13 +667,18 @@ function setTurmasForSegment() {
 
     const byTurma = new Map();
     for(const e of entries) {
+      const seg = (e.segment||"").toString();
       const t = e.turma;
-      if(!byTurma.has(t)) byTurma.set(t, []);
-      byTurma.get(t).push(e);
+      const key = `${seg}||${t}`;
+      if(!byTurma.has(key)) byTurma.set(key, { seg, turma: t, items: [] });
+      byTurma.get(key).items.push(e);
     }
 
     const blocks = [];
-    for(const [t, arr] of Array.from(byTurma.entries()).sort((a,b)=>a[0].localeCompare(b[0]))) {
+    for(const obj of Array.from(byTurma.values()).sort((a,b)=> (a.seg||"").localeCompare(b.seg||"") || (a.turma||"").localeCompare(b.turma||""))) {
+      const t = obj.turma;
+      const seg = obj.seg;
+      const arr = obj.items;
       const aulas = Array.from(new Set(arr.map(x => Number(x.aula)))).sort((a,b)=>a-b);
       const aulasTxt = aulas.map(a => `Aula ${a}`).join(", ");
 
@@ -688,7 +693,7 @@ function setTurmasForSegment() {
       blocks.push(`
         <div class="item" style="margin-top:10px;">
           <div class="row">
-            <div class="tag"><b>Turma:</b> ${t}</div>
+            <div class="tag"><b>Ano:</b> ${segLabel(seg)} • <b>Turma:</b> ${t}</div>
             <div class="tag" style="opacity:.9">${aulasTxt || "—"}</div>
           </div>
           ${realizedLines}
