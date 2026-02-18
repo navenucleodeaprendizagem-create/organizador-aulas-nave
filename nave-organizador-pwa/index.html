@@ -428,10 +428,10 @@ function refreshPlanningUI() {
 
 function updateConteudoOptions() {
   if (!conteudo) return;
-  const turma = turma.value;
+  const turmaVal = turma.value;
   const seg = segment.value;
   const aulaNum = Number(aula.value);
-  const plan = planSetFor(turma, seg);
+  const plan = planSetFor(turmaVal, seg);
   const matches = plan.filter(p => Number(p.aula) === aulaNum);
   // If planning exists but no match, show all assuntos for that segment
   const opts = (matches.length ? matches : plan).map(p => ({
@@ -459,9 +459,9 @@ function updateConteudoOptions() {
 }
 
 function updateAulaOptions() {
-  const turma = turma.value;
+  const turmaVal = turma.value;
   const seg = segment.value;
-  const plan = planSetFor(turma, seg);
+  const plan = planSetFor(turmaVal, seg);
   const maxPlanned = plan.reduce((m,p)=> Math.max(m, Number(p.aula)||0), 0);
   const maxAulas = Math.max(maxPlanned || 0, 50);
 
@@ -491,9 +491,9 @@ function updateAulaOptions() {
 }
 
 function renderPlanningModal() {
-  const turma = turma.value;
+  const turmaVal = turma.value;
   const store = loadPlanStore();
-  const planByTurma = store[turma] || {};
+  const planByTurma = store[turmaVal] || {};
   const segs = Object.keys(planByTurma);
   if (!segs.length) {
     alert("Nenhum planejamento encontrado para esta turma. Use 'Inserir planejamento (Excel)'.");
@@ -518,7 +518,6 @@ function renderPlanningModal() {
   const turma = el("turma");
   const aula = el("aula");
   const conteudo = el("conteudo");
-  const planejado = el("planejado");
   const realizado = el("realizado");
 
   const keyPreview = el("keyPreview");
@@ -679,7 +678,6 @@ realizado: realizado.value,
     turma.value = data.turma || turma.value;
     aula.value = data.aula || aula.value;
     conteudo.value = data.conteudo || conteudo.value;
-    planejado.value = data.planejado || "";
     realizado.value = data.realizado || "";
     updateKeyPreview();
   }
@@ -693,7 +691,6 @@ realizado.value = "";
     const k = makeKey();
     if (store[k]) {
       conteudo.value = store[k].conteudo || conteudo.value;
-      planejado.value = store[k].planejado || "";
       realizado.value = store[k].realizado || "";
       showToast("Registro carregado", "Encontramos um registro salvo para essa chave.");
     } else {
