@@ -922,34 +922,33 @@ realizado.value = "";
     if(!mondayISO) return showToast("Sem semana", "Selecione uma semana para imprimir.");
 
     const htmlToPrint = `
-      <!doctype html>
-      <html lang="pt-BR">
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Resumo semanal — Organizador de Aulas (NAVE)</title>
-        <style>
-          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; color:#111; }
-          h1 { font-size: 16px; margin: 0 0 10px; }
-          .sub { color:#444; font-size: 12px; margin-bottom: 14px; }
-          .card { border:1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
-          .row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-          .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; background:#f4f4f5; border:1px solid #e4e4e7; }
-          .meta { font-size: 12px; color:#333; line-height:1.35; }
-          .meta b { color:#111; }
-          @media print { body{ margin:0 } }
-        </style>
-        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resumo semanal — Organizador de Aulas (NAVE)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 18px; color:#111; }
+    h1 { font-size: 16px; margin: 0 0 10px; }
+    .sub { color:#444; font-size: 12px; margin-bottom: 14px; }
+    .card { border:1px solid #ddd; border-radius: 12px; padding: 12px; margin: 10px 0; }
+    .row { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .tag { font-size: 12px; padding: 6px 10px; border-radius: 999px; background:#f4f4f5; border:1px solid #e4e4e7; }
+    .meta { font-size: 12px; color:#333; line-height:1.35; }
+    .meta b { color:#111; }
+    @media print { body{ margin:0 } }
+  </style>
 </head>
-      <body>
-        <h1>Resumo semanal — Organizador de Aulas (NAVE)</h1>
-        <div class="sub"><b>Semana:</b> ${weekRangeLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
-        <div class="card">${weekSummary.innerHTML}</div>
-        <div class="sub" style="margin-top:14px;">Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.</div>
-        <script>window.onload = () => setTimeout(() => window.print(), 250);<\/script>
-      </body>
-      </html>
-    `;
+<body>
+  <h1>Resumo semanal — Organizador de Aulas (NAVE)</h1>
+  <div class="sub"><b>Semana:</b> ${weekRangeLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
+  <div class="card">${weekSummary.innerHTML}</div>
+  <div class="sub" style="margin-top:14px;">Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.</div>
+  <script>window.onload = () => setTimeout(() => window.print(), 250);<\/script>
+</body>
+</html>
+`;
     const w = window.open("", "_blank");
     if(!w) return showToast("Popup bloqueado", "Permita popups para imprimir o resumo.");
     w.document.open();
