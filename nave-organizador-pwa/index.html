@@ -620,23 +620,28 @@
     /**********************
      * Aula options (regra de não repetir)
      **********************/
-    function usedAulasFor(date, segment, turma){
-      const all = loadAllRecords();
-      const set = new Set();
-      for(const r of all){
-        if(r.date === date && r.segment === segment && r.turma === turma){
-          set.add(Number(r.aula));
-        }
-      }
-      return set;
+    function usedAulasFor(segment, turma, exceptKey=null){
+  const all = loadAllRecords();
+  const set = new Set();
+  for(const r of all){
+    // ignora o próprio registro (quando estiver editando)
+    if(exceptKey && recordKey(r) === exceptKey) continue;
+
+    if(r.segment === segment && r.turma === turma){
+      set.add(Number(r.aula));
     }
-
-    function rebuildAulaOptions(keepAulaIfLoaded){
-      const date = elDate.value;
+  }
+  return set;
+}
+ 
+   function rebuildAulaOptions(keepAulaIfLoaded){
       const segment = elSegment.value;
-      const turma = elTurma.value;
+const turma = elTurma.value;
 
-      const used = (date && segment && turma) ? usedAulasFor(date, segment, turma) : new Set();
+// se estiver editando um registro carregado, deixamos a aula dele aparecer
+const exceptKey = keepAulaIfLoaded ? currentLoadedKey : null;
+
+const used = (segment && turma) ? usedAulasFor(segment, turma, exceptKey) : new Set();
 
       // aula atual
       const current = Number(elAula.value || 1);
@@ -755,8 +760,27 @@
       }
 
       const all = loadAllRecords();
-      const key = recordKey(r);
-      const idx = all.findIndex(x => recordKey(x) === key);
+const key = recordKey(r);
+
+// trava duplicidade por segmento+turma+aula (independente da data)
+const clash = all.find(x =>
+  x.segment === r.segment &&
+  x.turma === r.turma &&
+  Number(x.aula) === Number(r.aula) &&
+  recordKey(x) !== key
+);
+
+if(clash){
+  showToast(
+    "Aula já usada",
+    `Aula ${r.aula} já foi registrada para ${r.segment} • ${r.turma} em ${formatBR(clash.date)}. Escolha outra aula.`
+  );
+  rebuildAulaOptions(false);
+  return;
+}
+
+const idx = all.findIndex(x => recordKey(x) === key);
+
 
       if(idx >= 0){
         all[idx] = { ...all[idx], ...r };
