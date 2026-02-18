@@ -9,13 +9,12 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#3B82F6">
   <link rel="apple-touch-icon" href="./icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <style>
-          .weekblock{background: rgba(255,255,255,.75);border:1px solid rgba(20,40,80,.10);border-radius:14px;padding:12px 12px;margin-top:10px;}
-:root{
-      /* Light layout */
+    :root{
       --bg:#F6F7FB;
       --card:#FFFFFF;
       --text:#0B1220;
@@ -24,16 +23,12 @@
       --shadow: 0 10px 30px rgba(2,6,23,.10);
       --r:18px;
 
-      /* NAVE gradient (kept for accents) */
       --g1:#0ea5ff;
       --g2:#7c3aed;
       --g3:#d946ef;
       --accent: linear-gradient(135deg, var(--g1), var(--g2), var(--g3));
       --accentSoft: linear-gradient(135deg, rgba(14,165,255,.12), rgba(124,58,237,.12), rgba(217,70,239,.12));
       --focus: rgba(14,165,255,.25);
-
-      --btn:#0F172A;
-      --btnText:#fff;
     }
 
     *{box-sizing:border-box}
@@ -76,25 +71,32 @@
       font-weight:750;
       font-size:13px;
       box-shadow: 0 6px 16px rgba(2,6,23,.06);
+      user-select:none;
     }
     button:hover{transform: translateY(-1px)}
     button:active{transform: translateY(0px)}
-
-    .primary{
+    button.primary{
       border:0;
       color:#fff;
       background: var(--accent);
       box-shadow: 0 14px 26px rgba(124,58,237,.18);
     }
-    .danger{
+    button.danger{
       color:#991b1b;
       border-color: rgba(220,38,38,.25);
       background: rgba(220,38,38,.06);
     }
-    .ghost{
-      background: transparent;
-      box-shadow:none;
+
+    .note{
+      border:1px dashed rgba(124,58,237,.35);
+      background: rgba(124,58,237,.06);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 0 0 14px;
     }
+    .note b{color: var(--text)}
 
     .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; align-items:start}
 
@@ -141,24 +143,15 @@
       box-shadow: 0 0 0 4px var(--focus);
     }
     textarea{min-height:120px; resize:vertical; line-height:1.35}
+
     .span-12{grid-column: span 12}
     .span-3{grid-column: span 3}
 
     .hint{margin-top:10px; color:var(--muted); font-size:12px}
 
-    .note{
-      border:1px dashed rgba(124,58,237,.35);
-      background: rgba(124,58,237,.06);
-      border-radius: 14px;
-      padding: 10px 12px;
-      color: var(--muted);
-      font-size: 12px;
-      margin: 0 0 14px;
-    }
-    .note b{color: var(--text)}
-
     .search{display:flex; gap:10px; align-items:center; padding:12px; border-bottom:1px solid var(--line); background: #fff}
     .search input{flex:1}
+
     .items{padding:12px; display:flex; flex-direction:column; gap:10px; max-height:560px; overflow:auto; background: #fff}
     .item{
       border:1px solid var(--line);
@@ -172,6 +165,59 @@
     .btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
 
     .footer{margin-top:14px; color:var(--muted); font-size:12px; text-align:right}
+
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: #fff;
+      border:1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display:none;
+      max-width: 360px;
+      z-index: 9999;
+    }
+    #toast .t{font-weight:900; font-size:13px; margin:0 0 2px}
+    #toast .m{font-size:12px; color:var(--muted); margin:0}
+
+    /* Modal */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,.45);
+      display:none;
+      z-index: 9998;
+      padding: 18px;
+    }
+    .modal{
+      max-width: 980px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .modal .mh{
+      padding: 14px 16px;
+      border-bottom:1px solid var(--line);
+      background: var(--accentSoft);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .modal .mh .k{font-weight:900}
+    .modal .mb{padding: 14px 16px}
+    .modal table{width:100%; border-collapse:collapse; font-size:12px}
+    .modal th, .modal td{border-bottom:1px solid var(--line); padding:10px 8px; text-align:left; vertical-align:top}
+    .modal th{font-size:12px; color: var(--muted)}
+    .modal .tools{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .modal .tools input{max-width: 320px}
 
     @media (max-width:980px){
       .grid{grid-template-columns: 1fr}
@@ -189,739 +235,694 @@
       .grid{grid-template-columns: 1fr}
       .card{box-shadow:none}
     }
-
-    #toast{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      background: #fff;
-      border:1px solid var(--line);
-      border-radius: 14px;
-      padding: 10px 12px;
-      color: var(--text);
-      box-shadow: var(--shadow);
-      display:none;
-      max-width: 360px;
-    }
-    #toast .t{font-weight:900; font-size:13px; margin:0 0 2px}
-    #toast .m{font-size:12px; color:var(--muted); margin:0}
   </style>
+
+  <!-- XLSX (Excel) - precisa existir no documento principal, não no print -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top">
       <div class="brand">
-        <div class="logo"><img alt="NAVE" src="data:image/png;base64,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"/></div>
+        <div class="logo">
+          <img alt="NAVE" src="./icon-192.png">
+        </div>
         <div class="title">
           <h1>Organizador de Aulas — NAVE</h1>
           <p>Instalável como app (PWA), modo offline, salvamento local, impressão.</p>
         </div>
       </div>
+
       <div class="actions">
         <button id="btnPrint">Imprimir</button>
         <button id="btnExport">Exportar</button>
         <button id="btnImport">Importar</button>
-        <button id="btnPlanImport">Inserir planejamento (Excel)</button>
-        <button id="btnPlanView">Ver planejamento</button>
-        <input id="planFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" />
-</div>
+        <button id="btnPlanExcel">Inserir planejamento (Excel)</button>
+        <button id="btnViewPlan">Ver planejamento</button>
+      </div>
     </div>
 
     <div class="note">
       <b>Como instalar no iPhone:</b> abra no Safari → <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>.
-      (Para PWA, precisa estar hospedado em um site https, ex.: GitHub Pages/Netlify.)
+      (Para PWA, precisa estar hospedado em site https.)
     </div>
 
     <div class="grid">
+      <!-- ESQUERDA -->
       <div class="card">
         <div class="hd">
           <div>
             <div class="k">Registro de Aula</div>
-            <div class="s" id="keyPreview">—</div>
+            <div class="s" id="subLine">—</div>
           </div>
-          <div class="tag" id="statusTag">Não salvo</div>
+          <span class="tag" id="saveBadge">Não salvo</span>
         </div>
+
         <div class="bd">
-          <form class="form" onsubmit="return false;">
+          <div class="form">
             <div class="span-3">
               <label for="date">Data</label>
-              <input id="date" type="date" />
+              <input id="date" type="date">
             </div>
 
             <div class="span-3">
               <label for="segment">Segmento</label>
               <select id="segment">
-                <option value="2ANO">2º Ano</option>
-                <option value="3ANO">3º Ano</option>
-                <option value="PREVEST">Pré-vest</option>
+                <option>2º Ano</option>
+                <option>3º Ano</option>
+                <option>Prevest</option>
               </select>
             </div>
 
             <div class="span-3">
               <label for="turma">Turma</label>
               <select id="turma">
-                <optgroup label="2º Ano"><option value="ALFA">ALFA</option><option value="CAPA">CAPA</option><option value="BETA">BETA</option><option value="DELTA">DELTA</option><option value="ETA">ETA</option><option value="FI">FI</option><option value="GAMA">GAMA</option><option value="PSI">PSI</option></optgroup><optgroup label="3º Ano"><option value="ALFA">ALFA</option><option value="CAPA">CAPA</option><option value="EPSILON">EPSILON</option><option value="MED">MED</option><option value="BETA">BETA</option><option value="DELTA">DELTA</option><option value="ETA">ETA</option><option value="FI">FI</option><option value="PSI">PSI</option></optgroup><optgroup label="Pré-vest"><option value="ETA">ETA</option><option value="FI">FI</option><option value="EXTENSIVO">EXTENSIVO</option><option value="MED">MED</option><option value="TARDE">TARDE</option></optgroup>
+                <option>ALFA</option>
+                <option>BETA</option>
+                <option>CAPA</option>
               </select>
             </div>
 
             <div class="span-3">
               <label for="aula">Aula</label>
-              <select id="aula">
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option><option value="60">60</option><option value="61">61</option><option value="62">62</option><option value="63">63</option><option value="64">64</option><option value="65">65</option><option value="66">66</option><option value="67">67</option><option value="68">68</option><option value="69">69</option><option value="70">70</option><option value="71">71</option><option value="72">72</option><option value="73">73</option><option value="74">74</option><option value="75">75</option><option value="76">76</option><option value="77">77</option><option value="78">78</option><option value="79">79</option><option value="80">80</option><option value="81">81</option><option value="82">82</option><option value="83">83</option><option value="84">84</option><option value="85">85</option><option value="86">86</option><option value="87">87</option><option value="88">88</option><option value="89">89</option><option value="90">90</option><option value="91">91</option><option value="92">92</option><option value="93">93</option><option value="94">94</option><option value="95">95</option><option value="96">96</option><option value="97">97</option><option value="98">98</option><option value="99">99</option><option value="100">100</option>
-              </select>
+              <select id="aula"></select>
             </div>
 
             <div class="span-12">
-              <label for="conteudo">Conteúdo</label>
-              <select id="conteudo">
-                <option value="Propriedades dos Materiais">1 — Propriedades dos Materiais</option><option value="Separação de misturas">2 — Separação de misturas</option><option value="Funções Inorgânicas">3 — Funções Inorgânicas</option><option value="Reações Inorgânicas">4 — Reações Inorgânicas</option><option value="Soluções">5 — Soluções</option><option value="Termoquímica">6 — Termoquímica</option><option value="Cinética química">7 — Cinética química</option><option value="Equilíbrio Químico">8 — Equilíbrio Químico</option><option value="Estequiometria">9 — Estequiometria</option><option value="Propriedades Coligativas">10 — Propriedades Coligativas</option><option value="Eletroquímica">11 — Eletroquímica</option><option value="Exercícios">12 — Exercícios</option><option value="Atividade Formativa">13 — Atividade Formativa</option><option value="Revisão">14 — Revisão</option><option value="Entrega de provas">15 — Entrega de provas</option>
-              </select>
+              <label for="content">Conteúdo</label>
+              <select id="content"></select>
             </div>
-<div class="span-12">
+
+            <div class="span-12">
               <label for="realizado">Realizado</label>
               <textarea id="realizado" placeholder="O que foi feito em sala..."></textarea>
             </div>
-            <div class="span-12" style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-top:-2px;">
-              <button class="primary" id="btnSave" type="button" style="min-width:160px;">Salvar</button>
-            </div>
+          </div>
 
+          <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+            <button class="primary" id="btnSave" style="min-width:160px;">Salvar</button>
+          </div>
 
-            <div class="span-12 hint">
-              Salvamento por chave <b>Data + Segmento + Turma + Aula</b>. Ao mudar data/turma/aula, carrega automaticamente (se existir).
-            </div>
-          </form>
+          <div class="hint">
+            Salvamento por chave <b>Data + Segmento + Turma + Aula</b>. Ao mudar data/turma/aula, carrega automaticamente (se existir).
+          </div>
         </div>
       </div>
 
+      <!-- DIREITA -->
       <div class="card right">
         <div class="hd">
           <div>
             <div class="k">Registros salvos</div>
             <div class="s">Carregar / excluir / filtrar</div>
           </div>
-          <div class="tag" id="countTag">0</div>
-        </div>
-
-        
-        <div class="search" style="flex-direction:column; align-items:stretch; gap:10px;">
-          <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
-            <div style="flex:1; min-width:240px;">
-              <label for="weekSelect" style="margin:0 0 6px 2px;">Resumo da semana (segunda a sábado)</label>
-              <select id="weekSelect"></select>
-            </div>
-            <button id="btnPrintWeek" class="primary" style="white-space:nowrap;">Imprimir resumo</button>
-          </div>
-          <div id="weekSummary" class="item" style="margin:0; background:rgba(2,6,23,.02);"></div>
+          <span class="tag" id="countTag">0</span>
         </div>
 
         <div class="search">
-          <input id="search" type="text" placeholder="Filtrar por data, turma, conteúdo, texto..." />
-          <button id="btnClearSearch">Limpar</button>
+          <input id="filter" type="text" placeholder="Filtrar por data, turma, conteúdo, texto...">
+          <button id="btnClearFilter">Limpar</button>
         </div>
 
+        <div class="bd" style="padding:12px 12px 0;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <div style="flex:1; min-width:240px;">
+              <label for="weekSel" style="margin:0 0 6px 2px;">Resumo da semana (segunda a sábado)</label>
+              <select id="weekSel" style="width:100%"></select>
+            </div>
+            <div style="margin-top:18px;">
+              <button class="primary" id="btnPrintWeek">Imprimir resumo</button>
+            </div>
+          </div>
+        </div>
 
-        <div class="items" id="items"></div>
+        <div class="items" id="list"></div>
       </div>
     </div>
 
-    <div class="footer">Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.</div>
+    <div class="footer">
+      Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.
+    </div>
   </div>
 
-  <div id="toast" role="status" aria-live="polite">
-    <p class="t" id="toastTitle">—</p>
+  <!-- Inputs ocultos -->
+  <input id="fileJson" type="file" accept="application/json" style="display:none">
+  <input id="fileExcel" type="file" accept=".xlsx,.xls" style="display:none">
+
+  <!-- Toast -->
+  <div id="toast">
+    <p class="t" id="toastTitle">Aviso</p>
     <p class="m" id="toastMsg">—</p>
   </div>
 
-<script>
-(() => {
-  // Register SW (offline)
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("error", (e) => {
-  try { showToast("Erro no app", String(e.message||e.error||"erro")); } catch(_) {}
-});
-window.addEventListener("unhandledrejection", (e) => {
-  try { showToast("Erro no app", String(e.reason||"erro")); } catch(_) {}
-});
-
-window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    });
-  }
-
-  const TURMAS = {"2ANO": ["ALFA", "CAPA", "BETA", "DELTA", "ETA", "FI", "GAMA", "PSI"], "3ANO": ["ALFA", "CAPA", "EPSILON", "MED", "BETA", "DELTA", "ETA", "FI", "PSI"], "PREVEST": ["ETA", "FI", "EXTENSIVO", "MED", "TARDE"]};
-  const STORAGE_KEY = "nave.organizadorAulas.v1";
-
-const PLAN_KEY = "nave.organizadorAulas.plan.v1";
-
-function loadPlanStore() {
-  try { return JSON.parse(localStorage.getItem(PLAN_KEY) || "{}"); } catch { return {}; }
-}
-function savePlanStore(store) {
-  localStorage.setItem(PLAN_KEY, JSON.stringify(store));
-}
-
-function normalizeSegment(seg) {
-  const s = String(seg || "").trim().toLowerCase();
-  if (s.startsWith("2")) return "2º Ano";
-  if (s.startsWith("3")) return "3º Ano";
-  if (s.includes("prev")) return "Prevest";
-  // already labels
-  if (s.includes("2º")) return "2º Ano";
-  if (s.includes("3º")) return "3º Ano";
-  return String(seg || "").trim();
-}
-
-function planSetFor(turma, segmento) {
-  const store = loadPlanStore();
-  const t = String(turma||"").trim();
-  const s = normalizeSegment(segmento);
-  return (store[t] && store[t][s]) ? store[t][s] : [];
-}
-
-function upsertPlanRows(turma, rows) {
-  const store = loadPlanStore();
-  const t = String(turma||"").trim();
-  if (!t) throw new Error("Turma não definida.");
-  store[t] = store[t] || {};
-  for (const r of rows) {
-    const seg = normalizeSegment(r.segmento);
-    if (!seg) continue;
-    store[t][seg] = store[t][seg] || [];
-    // replace by aula number + assunto + apostila? We'll upsert by aula+assunto
-    const aulaNum = Number(r.aula);
-    const key = `${aulaNum}::${String(r.assunto||"").trim()}::${String(r.apostila||"").trim()}`;
-    const existingIdx = store[t][seg].findIndex(x => `${Number(x.aula)}::${String(x.assunto||"").trim()}::${String(x.apostila||"").trim()}` === key);
-    const item = { apostila: String(r.apostila||"").trim(), assunto: String(r.assunto||"").trim(), aula: aulaNum };
-    if (existingIdx >= 0) store[t][seg][existingIdx] = item; else store[t][seg].push(item);
-  }
-  // sort
-  for (const seg of Object.keys(store[t])) {
-    store[t][seg].sort((a,b)=> (Number(a.aula)||0)-(Number(b.aula)||0));
-  }
-  savePlanStore(store);
-}
-
-function parsePlanningRowsFromSheet(data2d) {
-  // Expect columns:
-  // A: Número da apostila | B: Assunto | C: Número da aula | D: Segmento (2° ANO, 3° ANO, Prevest) | E: Turma (obrigatória)
-  const out = [];
-  for (let i = 0; i < data2d.length; i++) {
-    const row = data2d[i];
-    if (!row) continue;
-
-    const apostila = (row[0] ?? "").toString().trim();
-    const assunto  = (row[1] ?? "").toString().trim();
-    const aulaNum  = (row[2] ?? "").toString().trim();
-    const segmento = (row[3] ?? "").toString().trim();
-    const turma    = (row[4] ?? "").toString().trim();
-
-    // Skip empty rows
-    if (!apostila && !assunto && !aulaNum && !segmento && !turma) continue;
-
-    // Detect header row
-    const headerish = (i === 0) && (
-      apostila.toLowerCase().includes("apostil") ||
-      assunto.toLowerCase().includes("assunt") ||
-      aulaNum.toLowerCase().includes("aula") ||
-      segmento.toLowerCase().includes("segment") ||
-      turma.toLowerCase().includes("turm")
-    );
-    if (headerish) continue;
-
-    // Validate required fields
-    if (!assunto || !aulaNum || !segmento || !turma) {
-      throw new Error(`Linha ${i + 1}: campos obrigatórios ausentes. Preencha B (Assunto), C (Número da aula), D (Segmento) e E (Turma).`);
-    }
-
-    out.push({
-      apostila,
-      assunto,
-      aulaNum: String(aulaNum),
-      segmento,
-      turma
-    });
-  }
-  return out;
-}
-
-function refreshPlanningUI() {
-  updateAulaOptions();
-  updateConteudoOptions();
-}
-
-function updateConteudoOptions() {
-  if (!conteudo) return;
-  const turmaVal = turma.value;
-  const seg = segment.value;
-  const aulaNum = Number(aula.value);
-  const plan = planSetFor(turmaVal, seg);
-  const matches = plan.filter(p => Number(p.aula) === aulaNum);
-  // If planning exists but no match, show all assuntos for that segment
-  const opts = (matches.length ? matches : plan).map(p => ({
-    value: p.assunto,
-    label: (p.apostila ? `${p.apostila} — ${p.assunto}` : p.assunto)
-  }));
-  // fallback to existing static options if no planning
-  if (!opts.length) return; // keep existing list
-  conteudo.innerHTML = "";
-  // add placeholder option
-  const ph = document.createElement("option");
-  ph.value = "";
-  ph.textContent = "Selecione...";
-  conteudo.appendChild(ph);
-  for (const o of opts) {
-    const op = document.createElement("option");
-    op.value = o.value;
-    op.textContent = o.label;
-    conteudo.appendChild(op);
-  }
-  // auto-select first match if placeholder currently
-  if (!conteudo.value && matches.length) {
-    conteudo.value = matches[0].assunto;
-  }
-}
-
-function updateAulaOptions() {
-  const turmaVal = turma.value;
-  const seg = segment.value;
-  const plan = planSetFor(turmaVal, seg);
-  const maxPlanned = plan.reduce((m,p)=> Math.max(m, Number(p.aula)||0), 0);
-  const maxAulas = Math.max(maxPlanned || 0, 50);
-
-  const records = loadAllRecords();
-  const used = new Set(records
-    .filter(r => String(r.turma||"").trim()===String(turma||"").trim() && normalizeSegment(r.segmento)===normalizeSegment(seg))
-    .map(r => Number(r.aula))
-    .filter(n => Number.isFinite(n)));
-
-  const current = Number(aula.value) || 1;
-
-  aula.innerHTML = "";
-  for (let n=1;n<=maxAulas;n++){
-    if (used.has(n) && n!==current) continue; // hide used
-    const op=document.createElement("option");
-    op.value=String(n);
-    op.textContent=String(n);
-    aula.appendChild(op);
-  }
-  // ensure selection
-  if (![...aula.options].some(o=>Number(o.value)===current)) {
-    // choose first available
-    aula.value = aula.options[0] ? aula.options[0].value : "1";
-  } else {
-    aula.value = String(current);
-  }
-}
-
-function renderPlanningModal() {
-  const turmaVal = turma.value;
-  const store = loadPlanStore();
-  const planByTurma = store[turmaVal] || {};
-  const segs = Object.keys(planByTurma);
-  if (!segs.length) {
-    alert("Nenhum planejamento encontrado para esta turma. Use 'Inserir planejamento (Excel)'.");
-    return;
-  }
-  let html = `<h3 style="margin:0 0 10px 0">Planejamento — Turma ${escapeHtml(turma)}</h3>`;
-  for (const seg of segs.sort()) {
-    const rows = planByTurma[seg] || [];
-    html += `<div style="margin:12px 0 6px 0;font-weight:700">${escapeHtml(seg)}</div>`;
-    html += `<div style="border:1px solid #eee;border-radius:12px;padding:10px;background:#fff">`;
-    for (const r of rows) {
-      html += `<div style="padding:6px 0;border-bottom:1px solid #f2f2f2"><strong>Aula ${escapeHtml(String(r.aula))}</strong> — ${escapeHtml(r.apostila ? (r.apostila + " — " + r.assunto) : r.assunto)}</div>`;
-    }
-    html += `</div>`;
-  }
-  openModal(html, { showPrint: true, printTitle: `Planejamento - ${turma}` });
-}
-
-  const el = (id) => document.getElementById(id);
-  const date = el("date");
-  const segment = el("segment");
-  const turma = el("turma");
-  const aula = el("aula");
-  const conteudo = el("conteudo");
-  const realizado = el("realizado");
-
-  const keyPreview = el("keyPreview");
-  const statusTag = el("statusTag");
-  const items = el("items");
-  const search = el("search");
-  const countTag = el("countTag");
-
-  const btnSave = el("btnSave");
-  const btnPrint = el("btnPrint");
-  const btnExport = el("btnExport");
-  const btnImport = el("btnImport");
-  const btnClearSearch = el("btnClearSearch");
-
-  const weekSelect = el("weekSelect");
-  const weekSummary = el("weekSummary");
-  const btnPrintWeek = el("btnPrintWeek");
-
-  const toast = el("toast");
-  const toastTitle = el("toastTitle");
-  const toastMsg = el("toastMsg");
-  let toastTimer = null;
-  function showToast(title, msg) {
-    toastTitle.textContent = title;
-    toastMsg.textContent = msg;
-    toast.style.display = "block";
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.style.display = "none", 2400);
-  }
-
-  function loadStore() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
-    catch(e) { return {}; }
-  }
-  function saveStore(store) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  }
-
-  function loadAllRecords() {
-    const store = loadStore();
-    return Object.values(store || {});
-  }
-
-  function makeKey() {
-    const d = date.value || "";
-    return [d, segment.value, turma.value, aula.value].join("|");
-  }
-  function humanDate(iso) {
-    if(!iso) return "";
-    const parts = iso.split("-");
-    if(parts.length !== 3) return iso;
-    const [y,m,d] = parts;
-    return `${d}/${m}/${y}`;
-  }
-
-  // Segment label helper used across the app (list, weekly summary, printing)
-  function segmentLabel(seg) {
-    const v = String(seg || "").trim().toUpperCase();
-    if (v === "2ANO" || v === "2º ANO" || v === "2O ANO" || v === "2° ANO" || v === "2") return "2º Ano";
-    if (v === "3ANO" || v === "3º ANO" || v === "3O ANO" || v === "3° ANO" || v === "3") return "3º Ano";
-    if (v === "PREVEST" || v === "PRÉ" || v === "PRE" || v === "PRE-VEST" || v === "PRÉ-VEST" ) return "Prevest";
-    // If it's already a friendly label, keep it.
-    return String(seg || "").trim() || "—";
-  }
-
-  function normalizeToISO(dateStr) {
-    // Accepts "YYYY-MM-DD" or "DD/MM/YYYY" and returns ISO "YYYY-MM-DD" when possible.
-    const s = (dateStr||"").trim();
-    if(!s) return "";
-    if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
-    if(m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return s;
-  }
-
-  function isoToUTCDate(iso) {
-    iso = normalizeToISO(iso);
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||"");
-    if(!m) return null;
-    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
-    return new Date(Date.UTC(y, mo-1, d));
-  }
-  function parseISO(iso) {
-    return isoToUTCDate(iso);
-  }
-  function toISO(dt) {
-    // Accepts Date or ISO string and returns ISO "YYYY-MM-DD"
-    if(!dt) return "";
-    if(typeof dt === "string") return normalizeToISO(dt);
-    const y = dt.getUTCFullYear();
-    const m = String(dt.getUTCMonth()+1).padStart(2,"0");
-    const d = String(dt.getUTCDate()).padStart(2,"0");
-    return `${y}-${m}-${d}`;
-  }
-  function weekStartMonday(dateStr) {
-    const dt = isoToUTCDate(dateStr);
-    if(!dt) return "";
-    const dow = (dt.getUTCDay() + 6) % 7; // Monday=0
-    dt.setUTCDate(dt.getUTCDate() - dow);
-    return dt.toISOString().slice(0,10);
-  }
-  function weekRangeLabel(mondayISO) {
-    const mon = parseISO(mondayISO);
-    const sat = parseISO(mondayISO);
-    sat.setUTCDate(sat.getUTCDate() + 5);
-    return `${humanDate(mondayISO)} a ${humanDate(toISO(sat))}`;
-  }
-  function isMonToSat(iso) {
-    const dt = parseISO(iso);
-    if(!dt) return false;
-    const day = dt.getUTCDay();
-    return day >= 1 && day <= 6;
-  }
-function setTurmasForSegment() {
-    const list = TURMAS[segment.value] || [];
-    const current = turma.value;
-    turma.innerHTML = list.map(t => `<option value="${t}">${t}</option>`).join("");
-    if(current && list.includes(current)) turma.value = current;
-  }
-
-  function updateKeyPreview() {
-    const k = makeKey();
-    const d = humanDate((date.value||""));
-    const segLabel = segment.options[segment.selectedIndex]?.text || segment.value;
-    keyPreview.textContent = (d && turma.value && aula.value)
-      ? `${d} • ${segLabel} • Turma ${turma.value} • Aula ${aula.value}`
-      : "Preencha os campos para formar a chave do registro.";
-
-    const store = loadStore();
-    if (store[k]) {
-      statusTag.textContent = "Salvo";
-      statusTag.style.background = "rgba(34,197,94,.14)";
-      statusTag.style.borderColor = "rgba(34,197,94,.28)";
-    } else {
-      statusTag.textContent = "Não salvo";
-      statusTag.style.background = "#fff";
-      statusTag.style.borderColor = "rgba(15,23,42,.10)";
-    }
-  }
-
-  function getFormData() {
-    return {
-      date: normalizeToISO(date.value),
-      segment: segment.value,
-      turma: turma.value,
-      aula: aula.value,
-      conteudo: conteudo.value,
-realizado: realizado.value,
-      updatedAt: new Date().toISOString()
-    };
-  }
-
-  function setFormData(data) {
-    if(!data) return;
-    date.value = data.date || date.value;
-    segment.value = data.segment || segment.value;
-    setTurmasForSegment();
-    turma.value = data.turma || turma.value;
-    aula.value = data.aula || aula.value;
-    conteudo.value = data.conteudo || conteudo.value;
-    realizado.value = data.realizado || "";
-    updateKeyPreview();
-  }
-
-  function clearNotesOnly() {
-realizado.value = "";
-  }
-
-  function tryAutoLoad() {
-    const store = loadStore();
-    const k = makeKey();
-    if (store[k]) {
-      conteudo.value = store[k].conteudo || conteudo.value;
-      realizado.value = store[k].realizado || "";
-      showToast("Registro carregado", "Encontramos um registro salvo para essa chave.");
-    } else {
-      clearNotesOnly();
-    }
-    updateKeyPreview();
-    renderList();
-    buildWeekOptions();
-  }
-
-  function saveCurrent() {
-    const k = makeKey();
-    if (!date.value) return showToast("Falta a data", "Selecione a data do registro.");
-    if (!turma.value) return showToast("Falta a turma", "Selecione uma turma.");
-    if (!aula.value) return showToast("Falta a aula", "Selecione o número da aula.");
-
-    const store = loadStore();
-    store[k] = getFormData();
-    saveStore(store);
-    updateKeyPreview();
-    renderList();
-    showToast("Salvo", "Registro armazenado neste dispositivo.");
-  }
-
-  function newRecord() {
-    date.value = new Date().toISOString().slice(0,10);
-    clearNotesOnly();
-    conteudo.selectedIndex = 0;
-    updateKeyPreview();
-  }
-
-  function deleteKey(k) {
-    const store = loadStore();
-    if (!store[k]) return;
-    delete store[k];
-    saveStore(store);
-    updateKeyPreview();
-    renderList();
-    showToast("Excluído", "Registro removido deste dispositivo.");
-  }
-
-  function renderList() {
-    const store = loadStore();
-    const entries = Object.entries(store).map(([k,v]) => ({key:k, ...v}));
-    const q = (search.value || "").trim().toLowerCase();
-
-    const filtered = entries
-      .sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""))
-      .filter(e => {
-        if(!q) return true;
-        const h = [
-          humanDate(e.date||""),
-          e.segment||"",
-          e.turma||"",
-          String(e.aula||""),
-          e.conteudo||"",
-          e.planejado||"",
-          e.realizado||""
-        ].join(" ").toLowerCase();
-        return h.includes(q);
-      });
-
-    countTag.textContent = String(filtered.length);
-
-    if(filtered.length === 0) {
-      items.innerHTML = `<div class="item"><div class="meta">Nenhum registro encontrado. Use <b>Salvar</b> para armazenar o primeiro registro.</div></div>`;
-      return;
-    }
-
-
-    items.innerHTML = filtered.map(e => {
-      const d = humanDate(e.date||"");
-      const top = `${d} • ${segmentLabel(e.segment)} • ${e.turma} • Aula ${e.aula}`;
-      const snippet = (txt) => {
-        const t = (txt||"").trim().replace(/\s+/g," ");
-        return t.length > 120 ? t.slice(0,120) + "…" : (t || "—");
-      };
-      const snippetMultiline = (txt) => {
-        const t = (txt||"").trim();
-        if(!t) return "—";
-        const safe = t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-        const withBr = safe.replace(/\n/g,"<br>");
-        return withBr.length > 900 ? withBr.slice(0,900) + "…" : withBr;
-      };
-
-      const updated = e.updatedAt ? new Date(e.updatedAt).toLocaleString("pt-BR") : "—";
-      return `<div class="item">
-        <div class="row">
-          <div class="tag"><b>${top}</b></div>
-          <div class="tag" style="opacity:.9">Atualizado: ${updated}</div>
+  <!-- Modal planejamento -->
+  <div class="modal-backdrop" id="planModal">
+    <div class="modal">
+      <div class="mh">
+        <div class="k">Planejamento (importado do Excel)</div>
+        <div class="tools">
+          <input id="planFilter" type="text" placeholder="Filtrar (apostila, assunto, aula, segmento, turma)">
+          <button id="btnClosePlan">Fechar</button>
         </div>
-        <div class="meta"><b>Ano:</b> ${segmentLabel(e.segment)} • <b>Turma:</b> ${e.turma} • <b>Data:</b> ${d} • <b>Aula:</b> ${e.aula}</div>
-        <div class="meta" style="margin-top:6px;"><b>Realizado:</b><div style="margin-top:4px;">${snippetMultiline(e.realizado)}</div></div>
-        <div class="btns">
-          <button class="primary" data-load="${e.key}">Carregar</button>
-          <button class="danger" data-del="${e.key}">Excluir</button>
+      </div>
+      <div class="mb">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <button id="btnClearPlan" class="danger">Apagar planejamento</button>
+          <span class="tag" id="planCount">0 itens</span>
         </div>
-      </div>`;
-    }).join("");
+        <div style="overflow:auto; max-height:60vh;">
+          <table>
+            <thead>
+              <tr>
+                <th>Apostila (A)</th>
+                <th>Assunto (B)</th>
+                <th>Aula (C)</th>
+                <th>Segmento (D)</th>
+                <th>Turma (E)</th>
+              </tr>
+            </thead>
+            <tbody id="planTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    items.querySelectorAll("button[data-load]").forEach(b => {
-      b.addEventListener("click", () => {
-        const k = b.getAttribute("data-load");
-        const store = loadStore();
-        const data = store[k];
-        if(!data) return;
-        setFormData(data);
-        showToast("Carregado", "Registro carregado para edição/impressão.");
+  <script>
+    /**********************
+     * Storage keys
+     **********************/
+    const KEY_RECORDS = "nave_records_v1";
+    const KEY_PLAN = "nave_plan_v1";
+
+    /**********************
+     * Helpers
+     **********************/
+    function showToast(title, msg, ms = 2600){
+      const toast = document.getElementById("toast");
+      document.getElementById("toastTitle").textContent = title;
+      document.getElementById("toastMsg").textContent = msg;
+      toast.style.display = "block";
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => { toast.style.display = "none"; }, ms);
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function toISODate(d){
+      const yyyy = d.getFullYear();
+      const mm = pad2(d.getMonth()+1);
+      const dd = pad2(d.getDate());
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function formatBR(iso){
+      // iso: YYYY-MM-DD
+      const [y,m,d] = iso.split("-");
+      return `${d}/${m}/${y}`;
+    }
+
+    function safeJSONParse(s, fallback){
+      try { return JSON.parse(s); } catch { return fallback; }
+    }
+
+    function loadAllRecords(){
+      return safeJSONParse(localStorage.getItem(KEY_RECORDS) || "[]", []);
+    }
+
+    function saveAllRecords(arr){
+      localStorage.setItem(KEY_RECORDS, JSON.stringify(arr));
+    }
+
+    function loadPlan(){
+      return safeJSONParse(localStorage.getItem(KEY_PLAN) || "[]", []);
+    }
+
+    function savePlan(arr){
+      localStorage.setItem(KEY_PLAN, JSON.stringify(arr));
+    }
+
+    function recordKey({date, segment, turma, aula}){
+      return `${date}__${segment}__${turma}__${aula}`;
+    }
+
+    function mondayOf(isoDate){
+      const d = new Date(isoDate + "T12:00:00");
+      const day = d.getDay(); // 0=dom,1=seg...
+      const diff = (day === 0 ? -6 : 1 - day);
+      d.setDate(d.getDate() + diff);
+      return toISODate(d);
+    }
+
+    function addDays(iso, n){
+      const d = new Date(iso + "T12:00:00");
+      d.setDate(d.getDate() + n);
+      return toISODate(d);
+    }
+
+    function weekLabel(mondayISO){
+      const sat = addDays(mondayISO, 5);
+      return `${formatBR(mondayISO)} a ${formatBR(sat)}`;
+    }
+
+    function normalizeSegment(s){
+      // aceita "2° ANO", "2º Ano", etc.
+      if(!s) return "";
+      const x = String(s).trim().toLowerCase();
+      if(x.includes("2") && x.includes("ano")) return "2º Ano";
+      if(x.includes("3") && x.includes("ano")) return "3º Ano";
+      if(x.includes("prev")) return "Prevest";
+      // fallback: capitaliza
+      return String(s).trim();
+    }
+
+    function normalizeTurma(s){
+      return String(s || "").trim();
+    }
+
+    /**********************
+     * DOM refs
+     **********************/
+    const elDate = document.getElementById("date");
+    const elSegment = document.getElementById("segment");
+    const elTurma = document.getElementById("turma");
+    const elAula = document.getElementById("aula");
+    const elContent = document.getElementById("content");
+    const elRealizado = document.getElementById("realizado");
+
+    const elSubLine = document.getElementById("subLine");
+    const elSaveBadge = document.getElementById("saveBadge");
+
+    const elList = document.getElementById("list");
+    const elFilter = document.getElementById("filter");
+    const elCountTag = document.getElementById("countTag");
+
+    const elWeekSel = document.getElementById("weekSel");
+
+    const btnSave = document.getElementById("btnSave");
+    const btnPrint = document.getElementById("btnPrint");
+    const btnExport = document.getElementById("btnExport");
+    const btnImport = document.getElementById("btnImport");
+    const btnPlanExcel = document.getElementById("btnPlanExcel");
+    const btnViewPlan = document.getElementById("btnViewPlan");
+    const btnPrintWeek = document.getElementById("btnPrintWeek");
+    const btnClearFilter = document.getElementById("btnClearFilter");
+
+    const fileJson = document.getElementById("fileJson");
+    const fileExcel = document.getElementById("fileExcel");
+
+    const planModal = document.getElementById("planModal");
+    const btnClosePlan = document.getElementById("btnClosePlan");
+    const btnClearPlan = document.getElementById("btnClearPlan");
+    const planTbody = document.getElementById("planTbody");
+    const planFilter = document.getElementById("planFilter");
+    const planCount = document.getElementById("planCount");
+
+    /**********************
+     * State
+     **********************/
+    let currentLoadedKey = null; // chave do registro carregado (para permitir editar)
+    let suppressAutoLoad = false;
+
+    /**********************
+     * Planning -> Conteúdo
+     **********************/
+    function getPlanOptionsFor(segment, turma){
+      const plan = loadPlan();
+      const seg = normalizeSegment(segment);
+      const tur = normalizeTurma(turma);
+
+      const filtered = plan.filter(r =>
+        normalizeSegment(r.segmento) === seg &&
+        normalizeTurma(r.turma) === tur
+      );
+
+      // ordena por aula (num), depois apostila, depois assunto
+      filtered.sort((a,b)=>{
+        const aa = Number(a.aula) || 0;
+        const bb = Number(b.aula) || 0;
+        if(aa !== bb) return aa - bb;
+        const apA = String(a.apostila ?? "");
+        const apB = String(b.apostila ?? "");
+        if(apA !== apB) return apA.localeCompare(apB);
+        return String(a.assunto ?? "").localeCompare(String(b.assunto ?? ""));
       });
-    });
-    items.querySelectorAll("button[data-del]").forEach(b => {
-      b.addEventListener("click", () => {
-        const k = b.getAttribute("data-del");
-        if(confirm("Excluir este registro?")) deleteKey(k);
-      });
-    });
-  }
 
-
-  function buildWeekOptions() {
-    const store = loadStore();
-    const entries = Object.values(store);
-
-    const weeks = new Set();
-    for(const e of entries) {
-      if(!e || !e.date) continue;
-      const mon = weekStartMonday(normalizeToISO(e.date));
-      if(!mon) continue;
-      weeks.add(mon);
+      return filtered;
     }
 
-    const list = Array.from(weeks).sort((a,b) => b.localeCompare(a));
-    weekSelect.innerHTML = list.length
-      ? list.map(w => `<option value="${w}">${weekRangeLabel(w)}</option>`).join("")
-      : `<option value="">Nenhuma semana encontrada</option>`;
+    function fillContentFromPlan(){
+      const seg = elSegment.value;
+      const tur = elTurma.value;
+      const options = getPlanOptionsFor(seg, tur);
 
-    if(list.length) weekSelect.value = list[0];
-    renderWeekSummary();
-  }
+      elContent.innerHTML = "";
+      if(options.length === 0){
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "— (sem planejamento para este segmento/turma)";
+        elContent.appendChild(opt);
+        return;
+      }
 
-  function renderWeekSummary() {
-    if(!weekSelect || !weekSummary) return;
+      // cria lista única por (apostila+assunto+aula)
+      const seen = new Set();
+      for(const r of options){
+        const aulaNum = String(r.aula ?? "").trim();
+        const apostila = String(r.apostila ?? "").trim();
+        const assunto = String(r.assunto ?? "").trim();
+        const key = `${apostila}__${assunto}__${aulaNum}`;
+        if(seen.has(key)) continue;
+        seen.add(key);
 
-    const store = loadStore();
-    const all = Object.values(store||{});
-    const mondayISO = (weekSelect.value||"").trim();
-    if(!mondayISO) { weekSummary.innerHTML = '<div class="meta">Nenhuma semana encontrada.</div>'; return; }
-
-    const dtSat = isoToUTCDate(mondayISO);
-    dtSat.setUTCDate(dtSat.getUTCDate() + 5);
-    const satISO = dtSat.toISOString().slice(0,10);
-
-    const entries = all
-      .filter(e => e && e.date)
-      .map(e => ({...e, _iso: normalizeToISO(e.date)}))
-      .filter(e => e._iso >= mondayISO && e._iso <= satISO)
-      .sort((a,b) => (a.segment||"").localeCompare(b.segment||"") || (a.turma||"").localeCompare(b.turma||"") || (Number(a.aula)-Number(b.aula)) || a._iso.localeCompare(b._iso));
-
-    if(entries.length === 0) {
-      weekSummary.innerHTML = `Sem registros entre <b>${humanDate(mondayISO)}</b> e <b>${humanDate(satISO)}</b>.`;
-      return;
+        const opt = document.createElement("option");
+        // guardamos um "id" simples no value para localizar depois (não precisa ser único globalmente, só no select)
+        opt.value = key;
+        const prefix = aulaNum ? `${aulaNum} — ` : "";
+        const ap = apostila ? `Apostila ${apostila} • ` : "";
+        opt.textContent = `${prefix}${ap}${assunto || "(sem assunto)"}`;
+        elContent.appendChild(opt);
+      }
     }
 
-    const groups = new Map();
-    for(const e of entries) {
-      const seg = (e.segment||"").toString();
-      const turma = (e.turma||"").toString();
-      const key = `${seg}||${turma}`;
-      if(!groups.has(key)) groups.set(key, { seg, turma, items: [] });
-      groups.get(key).items.push(e);
+    /**********************
+     * Aula options (regra de não repetir)
+     **********************/
+    function usedAulasFor(date, segment, turma){
+      const all = loadAllRecords();
+      const set = new Set();
+      for(const r of all){
+        if(r.date === date && r.segment === segment && r.turma === turma){
+          set.add(Number(r.aula));
+        }
+      }
+      return set;
     }
 
-    const blocks = [];
-    for(const g of Array.from(groups.values()).sort((a,b)=> (a.seg||"").localeCompare(b.seg||"") || (a.turma||"").localeCompare(b.turma||""))) {
-      const lines = g.items
+    function rebuildAulaOptions(keepAulaIfLoaded){
+      const date = elDate.value;
+      const segment = elSegment.value;
+      const turma = elTurma.value;
+
+      const used = (date && segment && turma) ? usedAulasFor(date, segment, turma) : new Set();
+
+      // aula atual
+      const current = Number(elAula.value || 1);
+
+      // lista base (1..30)
+      const max = 30;
+      const allowed = [];
+      for(let i=1;i<=max;i++){
+        // se já usado, só permite se for o que está carregado/selecionado (editar)
+        if(used.has(i)){
+          if(keepAulaIfLoaded && i === current) allowed.push(i);
+          continue;
+        }
+        allowed.push(i);
+      }
+
+      // se nada sobrou (muito raro), mantém ao menos o atual
+      if(allowed.length === 0) allowed.push(current || 1);
+
+      // repopula select
+      const prev = current;
+      elAula.innerHTML = "";
+      for(const n of allowed){
+        const opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = String(n);
+        elAula.appendChild(opt);
+      }
+
+      // tenta manter seleção anterior
+      const hasPrev = allowed.includes(prev);
+      elAula.value = hasPrev ? String(prev) : String(allowed[0]);
+
+      updateHeaderLine();
+    }
+
+    /**********************
+     * Load / Save record
+     **********************/
+    function getFormData(){
+      return {
+        date: elDate.value,
+        segment: elSegment.value,
+        turma: elTurma.value,
+        aula: Number(elAula.value || 1),
+        contentValue: elContent.value || "",
+        contentLabel: (elContent.selectedOptions[0]?.textContent || "").trim(),
+        realizado: elRealizado.value || "",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function setFormData(r){
+      suppressAutoLoad = true;
+      elDate.value = r.date;
+      elSegment.value = r.segment;
+      elTurma.value = r.turma;
+
+      fillContentFromPlan();
+      rebuildAulaOptions(true);
+      elAula.value = String(r.aula);
+
+      // conteúdo: tenta setar pelo value; se não existir, deixa 1ª opção e grava label anterior no badge
+      const hasValue = Array.from(elContent.options).some(o => o.value === r.contentValue);
+      if(hasValue) elContent.value = r.contentValue;
+
+      elRealizado.value = r.realizado || "";
+      currentLoadedKey = recordKey(r);
+      elSaveBadge.textContent = "Carregado";
+      suppressAutoLoad = false;
+      updateHeaderLine();
+    }
+
+    function autoLoadIfExists(){
+      if(suppressAutoLoad) return;
+
+      const r = getFormData();
+      if(!r.date) return;
+
+      const all = loadAllRecords();
+      const key = recordKey(r);
+      const found = all.find(x => recordKey(x) === key);
+
+      if(found){
+        currentLoadedKey = key;
+        // mantém aula editável
+        rebuildAulaOptions(true);
+        // tenta setar conteúdo
+        fillContentFromPlan();
+        const hasValue = Array.from(elContent.options).some(o => o.value === found.contentValue);
+        if(hasValue) elContent.value = found.contentValue;
+
+        elRealizado.value = found.realizado || "";
+        elSaveBadge.textContent = "Carregado";
+      }else{
+        currentLoadedKey = null;
+        elRealizado.value = "";
+        elSaveBadge.textContent = "Não salvo";
+        // modo "novo": remove aulas usadas (não precisa manter aula antiga)
+        rebuildAulaOptions(false);
+        fillContentFromPlan();
+      }
+      updateHeaderLine();
+    }
+
+    function saveCurrent(){
+      const r = getFormData();
+
+      if(!r.date){
+        showToast("Faltou a data", "Selecione a data antes de salvar.");
+        return;
+      }
+      if(!r.segment || !r.turma || !r.aula){
+        showToast("Campos obrigatórios", "Segmento, turma e aula precisam estar preenchidos.");
+        return;
+      }
+
+      const all = loadAllRecords();
+      const key = recordKey(r);
+      const idx = all.findIndex(x => recordKey(x) === key);
+
+      if(idx >= 0){
+        all[idx] = { ...all[idx], ...r };
+      }else{
+        all.push(r);
+      }
+
+      saveAllRecords(all);
+      currentLoadedKey = key;
+      elSaveBadge.textContent = "Salvo";
+      showToast("Salvo", "Registro atualizado no dispositivo.");
+      renderList();
+      // depois de salvar, atualizar regra do seletor de aulas (aula atual deve continuar editável)
+      rebuildAulaOptions(true);
+      updateWeeks();
+    }
+
+    function deleteRecord(key){
+      const all = loadAllRecords();
+      const next = all.filter(x => recordKey(x) !== key);
+      saveAllRecords(next);
+
+      if(currentLoadedKey === key){
+        currentLoadedKey = null;
+        elSaveBadge.textContent = "Não salvo";
+      }
+
+      showToast("Excluído", "Registro removido.");
+      renderList();
+      updateWeeks();
+      // reprocessa aulas disponíveis
+      rebuildAulaOptions(false);
+    }
+
+    /**********************
+     * List rendering
+     **********************/
+    function renderList(){
+      const all = loadAllRecords();
+      const q = (elFilter.value || "").trim().toLowerCase();
+
+      const filtered = all
         .slice()
-        .sort((a,b)=> Number(a.aula)-Number(b.aula) || a._iso.localeCompare(b._iso))
-        .map(x => {
-          const ddmm = humanDate(x._iso).slice(0,5);
-          const real = ((x.realizado||"").trim() ? (x.realizado||"").trim() : "—");
-          const safe = real
-            .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-            .replace(/\n/g,"<br>");
-          return `<div class="meta" style="margin-top:10px;">
-                    <b>Aula ${x.aula} (${ddmm}):</b>
-                    <div style="margin-top:4px;">${safe}</div>
-                  </div>`;
-        }).join("");
+        .sort((a,b) => (a.date < b.date ? 1 : -1))
+        .filter(r => {
+          if(!q) return true;
+          const hay = [
+            r.date, r.segment, r.turma, String(r.aula),
+            r.contentLabel, r.realizado
+          ].join(" ").toLowerCase();
+          return hay.includes(q);
+        });
 
-      blocks.push(`<div class="weekblock">
+      elCountTag.textContent = String(filtered.length);
+
+      elList.innerHTML = "";
+      if(filtered.length === 0){
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `<div class="meta">Nenhum registro encontrado.</div>`;
+        elList.appendChild(div);
+        return;
+      }
+
+      for(const r of filtered){
+        const key = recordKey(r);
+        const wrap = document.createElement("div");
+        wrap.className = "item";
+
+        const title = `${formatBR(r.date)} • ${r.segment} • ${r.turma} • Aula ${r.aula}`;
+        const updated = r.updatedAt ? new Date(r.updatedAt).toLocaleString("pt-BR") : "—";
+
+        wrap.innerHTML = `
           <div class="row">
-            <div class="tag"><b>${segmentLabel(g.seg)} — ${g.turma}</b></div>
+            <div style="font-weight:900; font-size:12px;">${title}</div>
+            <span class="tag">Atualizado: ${updated}</span>
           </div>
-          ${lines}
-        </div>`);
+          <div class="meta"><b>Conteúdo:</b> ${escapeHTML(r.contentLabel || "—")}</div>
+          <div class="meta"><b>Realizado:</b><br>${escapeHTML((r.realizado || "").trim() || "—")}</div>
+          <div class="btns">
+            <button data-action="load" data-key="${key}" class="primary">Carregar</button>
+            <button data-action="del" data-key="${key}" class="danger">Excluir</button>
+          </div>
+        `;
+        elList.appendChild(wrap);
+      }
     }
 
-    weekSummary.innerHTML = `<div class="meta" style="margin-bottom:10px;">
-        <b>Semana:</b> ${humanDate(mondayISO)} a ${humanDate(satISO)} • <b>Turmas:</b> ${groups.size}
-      </div>` + blocks.join("");
-  }
+    function escapeHTML(s){
+      return String(s || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#39;")
+        .replaceAll("\n","<br>");
+    }
 
-  function printWeekSummary() {
-    const mondayISO = weekSelect.value;
-    if(!mondayISO) return showToast("Sem semana", "Selecione uma semana para imprimir.");
+    /**********************
+     * Weeks summary
+     **********************/
+    function updateWeeks(){
+      const all = loadAllRecords();
+      const mondaySet = new Set();
 
-    const htmlToPrint = `
+      for(const r of all){
+        if(!r.date) continue;
+        mondaySet.add(mondayOf(r.date));
+      }
+
+      const mondays = Array.from(mondaySet).sort((a,b)=> a < b ? 1 : -1);
+      elWeekSel.innerHTML = "";
+
+      if(mondays.length === 0){
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "—";
+        elWeekSel.appendChild(opt);
+        return;
+      }
+
+      for(const m of mondays){
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = weekLabel(m);
+        elWeekSel.appendChild(opt);
+      }
+    }
+
+    function buildWeekSummaryHTML(mondayISO){
+      const all = loadAllRecords();
+      const sat = addDays(mondayISO, 5);
+
+      const week = all
+        .filter(r => r.date >= mondayISO && r.date <= sat)
+        .slice()
+        .sort((a,b)=>{
+          if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+          if(a.segment !== b.segment) return a.segment.localeCompare(b.segment);
+          if(a.turma !== b.turma) return a.turma.localeCompare(b.turma);
+          return Number(a.aula) - Number(b.aula);
+        });
+
+      if(week.length === 0){
+        return `<div class="card"><b>Sem registros</b> nesta semana.</div>`;
+      }
+
+      let out = "";
+      for(const r of week){
+        const title = `${formatBR(r.date)} • ${r.segment} • ${r.turma} • Aula ${r.aula}`;
+        out += `
+          <div class="card">
+            <div class="row">
+              <div><b>${escapeHTML(title)}</b></div>
+              <div class="tag">${escapeHTML(r.contentLabel || "—")}</div>
+            </div>
+            <div class="meta" style="margin-top:8px;">
+              <b>Realizado:</b><br>${escapeHTML((r.realizado || "").trim() || "—")}
+            </div>
+          </div>
+        `;
+      }
+      return out;
+    }
+
+    function printWeek(){
+      const mondayISO = elWeekSel.value;
+      if(!mondayISO){
+        showToast("Sem semana", "Não há semanas disponíveis para imprimir.");
+        return;
+      }
+
+      const summaryHTML = buildWeekSummaryHTML(mondayISO);
+      const safeSummary = summaryHTML; // já vem escapado no conteúdo
+
+      // IMPORTANTE: não carregar scripts externos no print (evita bloqueios + não precisa)
+      const htmlToPrint = `
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -942,157 +943,359 @@ realizado.value = "";
 </head>
 <body>
   <h1>Resumo semanal — Organizador de Aulas (NAVE)</h1>
-  <div class="sub"><b>Semana:</b> ${weekRangeLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
-  <div class="card">${weekSummary.innerHTML}</div>
+  <div class="sub"><b>Semana:</b> ${weekLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
+  ${safeSummary}
   <div class="sub" style="margin-top:14px;">Desenvolvido por NAVE — Núcleo de Aprendizagem, Valor e Estratégia — Prof. Robson Carneiro.</div>
-  <script>window.onload = () => setTimeout(() => window.print(), 250);<\/script>
+  <script>
+    window.onload = () => setTimeout(() => window.print(), 250);
+  <\/script>
 </body>
 </html>
-`;
-    const w = window.open("", "_blank");
-    if(!w) return showToast("Popup bloqueado", "Permita popups para imprimir o resumo.");
-    w.document.open();
-    w.document.write(htmlToPrint);
-    w.document.close();
-  }
+      `.trim();
 
-  function exportJSON() {
-    const store = loadStore();
-    const blob = new Blob([JSON.stringify(store, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `organizador-aulas-nave_${new Date().toISOString().slice(0,10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast("Exportado", "Backup baixado (.json).");
-  }
+      const w = window.open("", "_blank");
+      if(!w){
+        showToast("Popup bloqueado", "Permita popups para imprimir o resumo.");
+        return;
+      }
+      w.document.open();
+      w.document.write(htmlToPrint);
+      w.document.close();
+    }
 
-  function importJSON() {
-    const inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "application/json";
-    inp.onchange = () => {
-      const file = inp.files && inp.files[0];
-      if(!file) return;
+    /**********************
+     * Export / Import JSON
+     **********************/
+    function exportJSON(){
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        app: "Organizador de Aulas — NAVE",
+        version: 1,
+        records: loadAllRecords(),
+        planning: loadPlan()
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `organizador-aulas-nave_${toISODate(new Date())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast("Exportado", "Arquivo JSON baixado.");
+    }
+
+    function importJSONFile(file){
       const reader = new FileReader();
       reader.onload = () => {
-        try {
-          const incoming = JSON.parse(String(reader.result || "{}"));
-          if(typeof incoming !== "object" || incoming === null) throw new Error("json inválido");
-          const store = loadStore();
-          saveStore({...store, ...incoming});
-          renderList();
-          buildWeekOptions();
-          updateKeyPreview();
-          showToast("Importado", "Registros mesclados com sucesso.");
-        } catch(e) {
-          showToast("Erro", "Arquivo inválido ou corrompido.");
+        const data = safeJSONParse(reader.result, null);
+        if(!data || typeof data !== "object"){
+          showToast("Arquivo inválido", "Não consegui ler esse JSON.");
+          return;
+        }
+
+        const records = Array.isArray(data.records) ? data.records : [];
+        const planning = Array.isArray(data.planning) ? data.planning : [];
+
+        // validação mínima
+        const saneRecords = records
+          .filter(r => r && r.date && r.segment && r.turma && r.aula != null)
+          .map(r => ({
+            date: String(r.date),
+            segment: String(r.segment),
+            turma: String(r.turma),
+            aula: Number(r.aula),
+            contentValue: String(r.contentValue || ""),
+            contentLabel: String(r.contentLabel || ""),
+            realizado: String(r.realizado || ""),
+            updatedAt: r.updatedAt ? String(r.updatedAt) : new Date().toISOString()
+          }));
+
+        const sanePlan = planning
+          .filter(r => r && r.assunto != null && r.segmento != null && r.turma != null)
+          .map(r => ({
+            apostila: String(r.apostila || ""),
+            assunto: String(r.assunto || ""),
+            aula: String(r.aula || ""),
+            segmento: normalizeSegment(r.segmento),
+            turma: normalizeTurma(r.turma)
+          }));
+
+        saveAllRecords(saneRecords);
+        savePlan(sanePlan);
+
+        fillContentFromPlan();
+        rebuildAulaOptions(false);
+        renderList();
+        updateWeeks();
+
+        showToast("Importado", `Registros: ${saneRecords.length} • Planejamento: ${sanePlan.length}`);
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    /**********************
+     * Planning Excel import
+     * Colunas:
+     * A: Número da apostila
+     * B: Assunto
+     * C: Número da aula
+     * D: Segmento (2° ANO, 3° ANO e Prevest)
+     * E: Turma (OBRIGATÓRIA)
+     **********************/
+    function importPlanningExcel(file){
+      if(typeof XLSX === "undefined"){
+        showToast("Falha no Excel", "Biblioteca XLSX não carregou. Verifique sua conexão/redeploy.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try{
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, {type:"array"});
+          const wsName = wb.SheetNames[0];
+          const ws = wb.Sheets[wsName];
+
+          // lê em linhas, incluindo vazios
+          const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:""});
+          if(rows.length < 2){
+            showToast("Planilha vazia", "Inclua pelo menos 1 linha de dados.");
+            return;
+          }
+
+          // assume que a 1ª linha pode ser cabeçalho; vamos importar todas as linhas a partir da 2ª
+          const out = [];
+          for(let i=1; i<rows.length; i++){
+            const row = rows[i] || [];
+            const apostila = String(row[0] ?? "").trim(); // A
+            const assunto  = String(row[1] ?? "").trim(); // B
+            const aula     = String(row[2] ?? "").trim(); // C
+            const segmentoRaw = String(row[3] ?? "").trim(); // D
+            const turmaRaw    = String(row[4] ?? "").trim(); // E (obrigatória)
+
+            // ignora linhas completamente vazias
+            if(!apostila && !assunto && !aula && !segmentoRaw && !turmaRaw) continue;
+
+            const segmento = normalizeSegment(segmentoRaw);
+
+            if(!turmaRaw){
+              showToast("Erro no Excel", `Linha ${i+1}: coluna E (Turma) é obrigatória.`);
+              return;
+            }
+            if(!segmento){
+              showToast("Erro no Excel", `Linha ${i+1}: coluna D (Segmento) é obrigatória.`);
+              return;
+            }
+            if(!assunto){
+              showToast("Erro no Excel", `Linha ${i+1}: coluna B (Assunto) é obrigatória.`);
+              return;
+            }
+
+            out.push({
+              apostila,
+              assunto,
+              aula,
+              segmento,
+              turma: normalizeTurma(turmaRaw)
+            });
+          }
+
+          if(out.length === 0){
+            showToast("Nada importado", "Não encontrei linhas válidas para importar.");
+            return;
+          }
+
+          // salva substituindo o planejamento atual (comportamento mais previsível)
+          savePlan(out);
+          fillContentFromPlan();
+          showToast("Planejamento importado", `${out.length} linhas importadas.`);
+          // atualiza modal se estiver aberto
+          renderPlanModal();
+        }catch(err){
+          console.error(err);
+          showToast("Falha ao ler Excel", "O arquivo pode estar corrompido ou num formato não suportado.");
         }
       };
-      reader.readAsText(file);
-    };
-    inp.click();
-  }
-
-  // Init
-  date.value = new Date().toISOString().slice(0,10);
-  setTurmasForSegment();
-  updateKeyPreview();
-  renderList();
-  tryAutoLoad();
-  // Planning-driven dropdowns
-  try { updateAulaOptions(); updateConteudoOptions(); } catch(e) {}
-  // Ensure weekly summary renders after initial load
-  setTimeout(() => { try { buildWeekOptions(); renderWeekSummary(); } catch(e){} }, 0);
-
-  segment.addEventListener("change", () => { setTurmasForSegment(); updateAulaOptions(); updateConteudoOptions(); tryAutoLoad(); });
-  [date].forEach(x => x.addEventListener("change", tryAutoLoad));
-  turma.addEventListener("change", () => { updateAulaOptions(); updateConteudoOptions(); tryAutoLoad(); });
-  aula.addEventListener("change", () => { updateConteudoOptions(); tryAutoLoad(); });
-  [conteudo, realizado].forEach(x => x.addEventListener("input", updateKeyPreview));
-
-  if(btnSave) btnSave.addEventListener("click", (ev) => { ev.preventDefault(); saveCurrent(); });
-  // Fallback (iOS cache/DOM race): delegated click handler
-  document.addEventListener("click", (ev) => {
-    const t = ev.target;
-    if(t && t.id === "btnSave") { ev.preventDefault(); saveCurrent(); }
-  });
-  btnPrint && btnPrint.addEventListener("click", () => { updateKeyPreview(); window.print(); });
-  btnExport && btnExport.addEventListener("click", exportJSON);
-  btnImport && btnImport.addEventListener("click", importJSON);
-
-
-btnPlanImport && btnPlanImport.addEventListener("click", () => {
-  if (!planFileEl) return;
-  planFileEl.value = "";
-  planFileEl.click();
-});
-
-planFileEl && planFileEl.addEventListener("change", async () => {
-  try {
-    const file = planFileEl.files?.[0];
-    if (!file) return;
-
-    const ab = await file.arrayBuffer();
-    const wb = XLSX.read(ab, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const data2d = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
-
-    const rows = parsePlanningRowsFromSheet(data2d);
-
-    // Group by Turma (coluna E) e faz upsert por turma
-    const byTurma = new Map();
-    for (const r of rows) {
-      const t = (r.turma || "").trim();
-      if (!t) continue; // parse já valida, mas por segurança
-      if (!byTurma.has(t)) byTurma.set(t, []);
-      byTurma.get(t).push(r);
+      reader.readAsArrayBuffer(file);
     }
 
-    for (const [t, list] of byTurma.entries()) {
-      upsertPlanRows(t, list);
+    /**********************
+     * Planning modal
+     **********************/
+    function openPlanModal(){
+      renderPlanModal();
+      planModal.style.display = "block";
     }
 
-    // Atualiza combo de Conteúdo conforme turma/segmento selecionados
-    refreshConteudoOptions();
-
-    alert(`Planejamento importado com sucesso!\nTurmas importadas: ${[...byTurma.keys()].join(", ")}`);
-  } catch (e) {
-    console.error(e);
-    alert("Falha ao importar planejamento: " + (e?.message || e));
-  } finally {
-    planFileEl.value = "";
-  }
-});
-
-const first = wb.SheetNames[0];
-      const ws = wb.Sheets[first];
-      rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+    function closePlanModal(){
+      planModal.style.display = "none";
     }
-    const rows = parsePlanningRowsFromSheet(rows2d);
-    if (!rows.length) { alert("Não encontrei linhas válidas. Verifique se a planilha tem as colunas: A Apostila, B Assunto, C Aula, D Segmento."); return; }
-    upsertPlanRows(turma.value, rows);
-    alert(`Planejamento importado: ${rows.length} linhas (Turma ${turma.value}).`);
-    refreshPlanningUI();
-  } catch (e) {
-    console.error(e);
-    alert("Erro ao importar planejamento: " + (e && e.message ? e.message : e));
-  }
-});
 
-btnPlanView && btnPlanView.addEventListener("click", renderPlanningModal);
+    function renderPlanModal(){
+      const plan = loadPlan();
+      const q = (planFilter.value || "").trim().toLowerCase();
 
+      const filtered = plan.filter(r => {
+        if(!q) return true;
+        const hay = [r.apostila, r.assunto, r.aula, r.segmento, r.turma].join(" ").toLowerCase();
+        return hay.includes(q);
+      });
 
-  search.addEventListener("input", renderList);
-  btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
+      planCount.textContent = `${filtered.length} itens`;
+      planTbody.innerHTML = "";
 
-  weekSelect.addEventListener("change", renderWeekSummary);
-  btnPrintWeek && btnPrintWeek.addEventListener("click", printWeekSummary);
+      if(filtered.length === 0){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="5" style="color:#5B677C; padding:12px 8px;">Nenhum item de planejamento.</td>`;
+        planTbody.appendChild(tr);
+        return;
+      }
 
-})();
-</script>
+      for(const r of filtered){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHTML(r.apostila)}</td>
+          <td>${escapeHTML(r.assunto)}</td>
+          <td>${escapeHTML(r.aula)}</td>
+          <td>${escapeHTML(r.segmento)}</td>
+          <td>${escapeHTML(r.turma)}</td>
+        `;
+        planTbody.appendChild(tr);
+      }
+    }
+
+    function clearPlanning(){
+      if(!confirm("Apagar TODO o planejamento importado?")) return;
+      savePlan([]);
+      fillContentFromPlan();
+      renderPlanModal();
+      showToast("Planejamento apagado", "A lista de conteúdos ficará vazia até importar novamente.");
+    }
+
+    /**********************
+     * Header line
+     **********************/
+    function updateHeaderLine(){
+      const d = elDate.value ? formatBR(elDate.value) : "—";
+      elSubLine.textContent = `${d} • ${elSegment.value} • Turma ${elTurma.value} • Aula ${elAula.value}`;
+    }
+
+    /**********************
+     * Global print (imprimir página)
+     **********************/
+    function printPage(){
+      window.print();
+    }
+
+    /**********************
+     * Events
+     **********************/
+    document.addEventListener("DOMContentLoaded", () => {
+      // default date: hoje
+      const today = toISODate(new Date());
+      elDate.value = today;
+
+      // aula options inicial
+      elAula.innerHTML = "";
+      for(let i=1;i<=30;i++){
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = String(i);
+        elAula.appendChild(opt);
+      }
+      elAula.value = "1";
+
+      // conteúdo inicial
+      fillContentFromPlan();
+      rebuildAulaOptions(false);
+      updateHeaderLine();
+
+      // lista
+      renderList();
+      updateWeeks();
+
+      // handlers
+      btnSave.addEventListener("click", saveCurrent);
+
+      btnPrint.addEventListener("click", printPage);
+      btnPrintWeek.addEventListener("click", printWeek);
+
+      btnExport.addEventListener("click", exportJSON);
+      btnImport.addEventListener("click", () => fileJson.click());
+
+      btnPlanExcel.addEventListener("click", () => fileExcel.click());
+      btnViewPlan.addEventListener("click", openPlanModal);
+
+      btnClearFilter.addEventListener("click", () => {
+        elFilter.value = "";
+        renderList();
+      });
+
+      // filtros
+      elFilter.addEventListener("input", renderList);
+
+      // mudanças de form -> autoload + regras
+      elDate.addEventListener("change", () => { rebuildAulaOptions(false); autoLoadIfExists(); updateWeeks(); });
+      elSegment.addEventListener("change", () => { fillContentFromPlan(); rebuildAulaOptions(false); autoLoadIfExists(); });
+      elTurma.addEventListener("change", () => { fillContentFromPlan(); rebuildAulaOptions(false); autoLoadIfExists(); });
+      elAula.addEventListener("change", () => { autoLoadIfExists(); });
+
+      // clicar na lista (delegação)
+      elList.addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if(!btn) return;
+        const action = btn.dataset.action;
+        const key = btn.dataset.key;
+        if(!action || !key) return;
+
+        const all = loadAllRecords();
+        const r = all.find(x => recordKey(x) === key);
+        if(action === "load"){
+          if(!r) return;
+          setFormData(r);
+          // ao carregar, permitir editar a aula carregada
+          rebuildAulaOptions(true);
+          showToast("Carregado", "Você pode editar e salvar novamente.");
+        }
+        if(action === "del"){
+          if(!confirm("Excluir este registro?")) return;
+          deleteRecord(key);
+        }
+      });
+
+      // JSON file change
+      fileJson.addEventListener("change", () => {
+        const f = fileJson.files?.[0];
+        fileJson.value = "";
+        if(!f) return;
+        importJSONFile(f);
+      });
+
+      // Excel planning change
+      fileExcel.addEventListener("change", () => {
+        const f = fileExcel.files?.[0];
+        fileExcel.value = "";
+        if(!f) return;
+        importPlanningExcel(f);
+      });
+
+      // Modal
+      btnClosePlan.addEventListener("click", closePlanModal);
+      btnClearPlan.addEventListener("click", clearPlanning);
+      planFilter.addEventListener("input", renderPlanModal);
+
+      planModal.addEventListener("click", (e) => {
+        if(e.target === planModal) closePlanModal();
+      });
+
+      // Register SW (se existir)
+      if("serviceWorker" in navigator){
+        navigator.serviceWorker.register("./sw.js").catch(()=>{});
+      }
+    });
+  </script>
 </body>
 </html>
