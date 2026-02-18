@@ -1,12 +1,11 @@
 /* NAVE Organizador PWA - service worker */
-const CACHE = "nave-organizador-v15";
+const CACHE = "nave-organizador-v14";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icon-192.png",
-  "./icon-512.png",
-  "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
