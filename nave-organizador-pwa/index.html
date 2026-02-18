@@ -206,6 +206,7 @@
     #toast .t{font-weight:900; font-size:13px; margin:0 0 2px}
     #toast .m{font-size:12px; color:var(--muted); margin:0}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -218,11 +219,13 @@
         </div>
       </div>
       <div class="actions">
-        <button id="btnNew" class="ghost">Novo</button>
         <button id="btnPrint">Imprimir</button>
         <button id="btnExport">Exportar</button>
         <button id="btnImport">Importar</button>
-      </div>
+        <button id="btnPlanImport">Inserir planejamento (Excel)</button>
+        <button id="btnPlanView">Ver planejamento</button>
+        <input id="planFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" />
+</div>
     </div>
 
     <div class="note">
@@ -275,13 +278,7 @@
                 <option value="Propriedades dos Materiais">1 — Propriedades dos Materiais</option><option value="Separação de misturas">2 — Separação de misturas</option><option value="Funções Inorgânicas">3 — Funções Inorgânicas</option><option value="Reações Inorgânicas">4 — Reações Inorgânicas</option><option value="Soluções">5 — Soluções</option><option value="Termoquímica">6 — Termoquímica</option><option value="Cinética química">7 — Cinética química</option><option value="Equilíbrio Químico">8 — Equilíbrio Químico</option><option value="Estequiometria">9 — Estequiometria</option><option value="Propriedades Coligativas">10 — Propriedades Coligativas</option><option value="Eletroquímica">11 — Eletroquímica</option><option value="Exercícios">12 — Exercícios</option><option value="Atividade Formativa">13 — Atividade Formativa</option><option value="Revisão">14 — Revisão</option><option value="Entrega de provas">15 — Entrega de provas</option>
               </select>
             </div>
-
-            <div class="span-12">
-              <label for="planejado">Planejado</label>
-              <textarea id="planejado" placeholder="O que será feito em sala..."></textarea>
-            </div>
-
-            <div class="span-12">
+<div class="span-12">
               <label for="realizado">Realizado</label>
               <textarea id="realizado" placeholder="O que foi feito em sala..."></textarea>
             </div>
@@ -355,6 +352,166 @@ window.addEventListener("load", () => {
   const TURMAS = {"2ANO": ["ALFA", "CAPA", "BETA", "DELTA", "ETA", "FI", "GAMA", "PSI"], "3ANO": ["ALFA", "CAPA", "EPSILON", "MED", "BETA", "DELTA", "ETA", "FI", "PSI"], "PREVEST": ["ETA", "FI", "EXTENSIVO", "MED", "TARDE"]};
   const STORAGE_KEY = "nave.organizadorAulas.v1";
 
+const PLAN_KEY = "nave.organizadorAulas.plan.v1";
+
+function loadPlanStore() {
+  try { return JSON.parse(localStorage.getItem(PLAN_KEY) || "{}"); } catch { return {}; }
+}
+function savePlanStore(store) {
+  localStorage.setItem(PLAN_KEY, JSON.stringify(store));
+}
+
+function normalizeSegment(seg) {
+  const s = String(seg || "").trim().toLowerCase();
+  if (s.startsWith("2")) return "2º Ano";
+  if (s.startsWith("3")) return "3º Ano";
+  if (s.includes("prev")) return "Prevest";
+  // already labels
+  if (s.includes("2º")) return "2º Ano";
+  if (s.includes("3º")) return "3º Ano";
+  return String(seg || "").trim();
+}
+
+function planSetFor(turma, segmento) {
+  const store = loadPlanStore();
+  const t = String(turma||"").trim();
+  const s = normalizeSegment(segmento);
+  return (store[t] && store[t][s]) ? store[t][s] : [];
+}
+
+function upsertPlanRows(turma, rows) {
+  const store = loadPlanStore();
+  const t = String(turma||"").trim();
+  if (!t) throw new Error("Turma não definida.");
+  store[t] = store[t] || {};
+  for (const r of rows) {
+    const seg = normalizeSegment(r.segmento);
+    if (!seg) continue;
+    store[t][seg] = store[t][seg] || [];
+    // replace by aula number + assunto + apostila? We'll upsert by aula+assunto
+    const aulaNum = Number(r.aula);
+    const key = `${aulaNum}::${String(r.assunto||"").trim()}::${String(r.apostila||"").trim()}`;
+    const existingIdx = store[t][seg].findIndex(x => `${Number(x.aula)}::${String(x.assunto||"").trim()}::${String(x.apostila||"").trim()}` === key);
+    const item = { apostila: String(r.apostila||"").trim(), assunto: String(r.assunto||"").trim(), aula: aulaNum };
+    if (existingIdx >= 0) store[t][seg][existingIdx] = item; else store[t][seg].push(item);
+  }
+  // sort
+  for (const seg of Object.keys(store[t])) {
+    store[t][seg].sort((a,b)=> (Number(a.aula)||0)-(Number(b.aula)||0));
+  }
+  savePlanStore(store);
+}
+
+function parsePlanningRowsFromSheet(data2d) {
+  // Expect columns: A apostila, B assunto, C aula, D segmento
+  const out = [];
+  for (let i=0;i<data2d.length;i++){
+    const row = data2d[i];
+    if (!row) continue;
+    // skip header-like row
+    if (i===0 && String(row[0]||"").toLowerCase().includes("apost") ) continue;
+    const apostila = row[0];
+    const assunto = row[1];
+    const aula = row[2];
+    const segmento = row[3];
+    if (assunto==null && aula==null && segmento==null && apostila==null) continue;
+    if (!String(assunto||"").trim() || !String(aula||"").trim() || !String(segmento||"").trim()) continue;
+    out.push({ apostila, assunto, aula: Number(aula), segmento });
+  }
+  return out.filter(r=> Number.isFinite(r.aula));
+}
+
+function refreshPlanningUI() {
+  updateAulaOptions();
+  updateConteudoOptions();
+}
+
+function updateConteudoOptions() {
+  if (!conteudo) return;
+  const turma = turma.value;
+  const seg = segment.value;
+  const aulaNum = Number(aula.value);
+  const plan = planSetFor(turma, seg);
+  const matches = plan.filter(p => Number(p.aula) === aulaNum);
+  // If planning exists but no match, show all assuntos for that segment
+  const opts = (matches.length ? matches : plan).map(p => ({
+    value: p.assunto,
+    label: (p.apostila ? `${p.apostila} — ${p.assunto}` : p.assunto)
+  }));
+  // fallback to existing static options if no planning
+  if (!opts.length) return; // keep existing list
+  conteudo.innerHTML = "";
+  // add placeholder option
+  const ph = document.createElement("option");
+  ph.value = "";
+  ph.textContent = "Selecione...";
+  conteudo.appendChild(ph);
+  for (const o of opts) {
+    const op = document.createElement("option");
+    op.value = o.value;
+    op.textContent = o.label;
+    conteudo.appendChild(op);
+  }
+  // auto-select first match if placeholder currently
+  if (!conteudo.value && matches.length) {
+    conteudo.value = matches[0].assunto;
+  }
+}
+
+function updateAulaOptions() {
+  const turma = turma.value;
+  const seg = segment.value;
+  const plan = planSetFor(turma, seg);
+  const maxPlanned = plan.reduce((m,p)=> Math.max(m, Number(p.aula)||0), 0);
+  const maxAulas = Math.max(maxPlanned || 0, 50);
+
+  const records = loadAllRecords();
+  const used = new Set(records
+    .filter(r => String(r.turma||"").trim()===String(turma||"").trim() && normalizeSegment(r.segmento)===normalizeSegment(seg))
+    .map(r => Number(r.aula))
+    .filter(n => Number.isFinite(n)));
+
+  const current = Number(aula.value) || 1;
+
+  aula.innerHTML = "";
+  for (let n=1;n<=maxAulas;n++){
+    if (used.has(n) && n!==current) continue; // hide used
+    const op=document.createElement("option");
+    op.value=String(n);
+    op.textContent=String(n);
+    aula.appendChild(op);
+  }
+  // ensure selection
+  if (![...aula.options].some(o=>Number(o.value)===current)) {
+    // choose first available
+    aula.value = aula.options[0] ? aula.options[0].value : "1";
+  } else {
+    aula.value = String(current);
+  }
+}
+
+function renderPlanningModal() {
+  const turma = turma.value;
+  const store = loadPlanStore();
+  const planByTurma = store[turma] || {};
+  const segs = Object.keys(planByTurma);
+  if (!segs.length) {
+    alert("Nenhum planejamento encontrado para esta turma. Use 'Inserir planejamento (Excel)'.");
+    return;
+  }
+  let html = `<h3 style="margin:0 0 10px 0">Planejamento — Turma ${escapeHtml(turma)}</h3>`;
+  for (const seg of segs.sort()) {
+    const rows = planByTurma[seg] || [];
+    html += `<div style="margin:12px 0 6px 0;font-weight:700">${escapeHtml(seg)}</div>`;
+    html += `<div style="border:1px solid #eee;border-radius:12px;padding:10px;background:#fff">`;
+    for (const r of rows) {
+      html += `<div style="padding:6px 0;border-bottom:1px solid #f2f2f2"><strong>Aula ${escapeHtml(String(r.aula))}</strong> — ${escapeHtml(r.apostila ? (r.apostila + " — " + r.assunto) : r.assunto)}</div>`;
+    }
+    html += `</div>`;
+  }
+  openModal(html, { showPrint: true, printTitle: `Planejamento - ${turma}` });
+}
+
   const el = (id) => document.getElementById(id);
   const date = el("date");
   const segment = el("segment");
@@ -371,7 +528,6 @@ window.addEventListener("load", () => {
   const countTag = el("countTag");
 
   const btnSave = el("btnSave");
-  const btnNew = el("btnNew");
   const btnPrint = el("btnPrint");
   const btnExport = el("btnExport");
   const btnImport = el("btnImport");
@@ -399,6 +555,11 @@ window.addEventListener("load", () => {
   }
   function saveStore(store) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  }
+
+  function loadAllRecords() {
+    const store = loadStore();
+    return Object.values(store || {});
   }
 
   function makeKey() {
@@ -505,8 +666,7 @@ function setTurmasForSegment() {
       turma: turma.value,
       aula: aula.value,
       conteudo: conteudo.value,
-      planejado: planejado.value,
-      realizado: realizado.value,
+realizado: realizado.value,
       updatedAt: new Date().toISOString()
     };
   }
@@ -525,8 +685,7 @@ function setTurmasForSegment() {
   }
 
   function clearNotesOnly() {
-    planejado.value = "";
-    realizado.value = "";
+realizado.value = "";
   }
 
   function tryAutoLoad() {
@@ -759,7 +918,8 @@ function setTurmasForSegment() {
           .meta b { color:#111; }
           @media print { body{ margin:0 } }
         </style>
-      </head>
+        <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
       <body>
         <h1>Resumo semanal — Organizador de Aulas (NAVE)</h1>
         <div class="sub"><b>Semana:</b> ${weekRangeLabel(mondayISO)} (segunda a sábado) • <b>Gerado em:</b> ${new Date().toLocaleString("pt-BR")}</div>
@@ -823,12 +983,16 @@ function setTurmasForSegment() {
   updateKeyPreview();
   renderList();
   tryAutoLoad();
+  // Planning-driven dropdowns
+  try { updateAulaOptions(); updateConteudoOptions(); } catch(e) {}
   // Ensure weekly summary renders after initial load
   setTimeout(() => { try { buildWeekOptions(); renderWeekSummary(); } catch(e){} }, 0);
 
-  segment.addEventListener("change", () => { setTurmasForSegment(); tryAutoLoad(); });
-  [date, turma, aula].forEach(x => x.addEventListener("change", tryAutoLoad));
-  [conteudo, planejado, realizado].forEach(x => x.addEventListener("input", updateKeyPreview));
+  segment.addEventListener("change", () => { setTurmasForSegment(); updateAulaOptions(); updateConteudoOptions(); tryAutoLoad(); });
+  [date].forEach(x => x.addEventListener("change", tryAutoLoad));
+  turma.addEventListener("change", () => { updateAulaOptions(); updateConteudoOptions(); tryAutoLoad(); });
+  aula.addEventListener("change", () => { updateConteudoOptions(); tryAutoLoad(); });
+  [conteudo, realizado].forEach(x => x.addEventListener("input", updateKeyPreview));
 
   if(btnSave) btnSave.addEventListener("click", (ev) => { ev.preventDefault(); saveCurrent(); });
   // Fallback (iOS cache/DOM race): delegated click handler
@@ -836,10 +1000,48 @@ function setTurmasForSegment() {
     const t = ev.target;
     if(t && t.id === "btnSave") { ev.preventDefault(); saveCurrent(); }
   });
-  btnNew.addEventListener("click", () => { if(confirm("Novo registro (limpar Planejado/Realizado e data de hoje)?")) newRecord(); });
   btnPrint.addEventListener("click", () => { updateKeyPreview(); window.print(); });
   btnExport.addEventListener("click", exportJSON);
   btnImport.addEventListener("click", importJSON);
+
+
+btnPlanImport.addEventListener("click", () => {
+  // precisa selecionar a turma antes de importar, porque a planilha não tem coluna "Turma"
+  if (!turma.value) { alert("Selecione a Turma antes de importar o planejamento."); return; }
+  planFileEl.value = "";
+  planFileEl.click();
+});
+
+planFileEl.addEventListener("change", async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  try {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    let rows2d = [];
+    if (ext === "csv") {
+      const text = await file.text();
+      rows2d = text.split(/\r?\n/).filter(Boolean).map(line => line.split(","));
+    } else {
+      if (typeof XLSX === "undefined") throw new Error("Biblioteca XLSX não carregou. Verifique sua conexão e recarregue a página.");
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const first = wb.SheetNames[0];
+      const ws = wb.Sheets[first];
+      rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+    }
+    const rows = parsePlanningRowsFromSheet(rows2d);
+    if (!rows.length) { alert("Não encontrei linhas válidas. Verifique se a planilha tem as colunas: A Apostila, B Assunto, C Aula, D Segmento."); return; }
+    upsertPlanRows(turma.value, rows);
+    alert(`Planejamento importado: ${rows.length} linhas (Turma ${turma.value}).`);
+    refreshPlanningUI();
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao importar planejamento: " + (e && e.message ? e.message : e));
+  }
+});
+
+btnPlanView.addEventListener("click", renderPlanningModal);
+
 
   search.addEventListener("input", renderList);
   btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
