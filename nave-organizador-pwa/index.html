@@ -403,22 +403,46 @@ function upsertPlanRows(turma, rows) {
 }
 
 function parsePlanningRowsFromSheet(data2d) {
-  // Expect columns: A apostila, B assunto, C aula, D segmento
+  // Expect columns:
+  // A: Número da apostila | B: Assunto | C: Número da aula | D: Segmento (2° ANO, 3° ANO, Prevest) | E: Turma (obrigatória)
   const out = [];
-  for (let i=0;i<data2d.length;i++){
+  for (let i = 0; i < data2d.length; i++) {
     const row = data2d[i];
     if (!row) continue;
-    // skip header-like row
-    if (i===0 && String(row[0]||"").toLowerCase().includes("apost") ) continue;
-    const apostila = row[0];
-    const assunto = row[1];
-    const aula = row[2];
-    const segmento = row[3];
-    if (assunto==null && aula==null && segmento==null && apostila==null) continue;
-    if (!String(assunto||"").trim() || !String(aula||"").trim() || !String(segmento||"").trim()) continue;
-    out.push({ apostila, assunto, aula: Number(aula), segmento });
+
+    const apostila = (row[0] ?? "").toString().trim();
+    const assunto  = (row[1] ?? "").toString().trim();
+    const aulaNum  = (row[2] ?? "").toString().trim();
+    const segmento = (row[3] ?? "").toString().trim();
+    const turma    = (row[4] ?? "").toString().trim();
+
+    // Skip empty rows
+    if (!apostila && !assunto && !aulaNum && !segmento && !turma) continue;
+
+    // Detect header row
+    const headerish = (i === 0) && (
+      apostila.toLowerCase().includes("apostil") ||
+      assunto.toLowerCase().includes("assunt") ||
+      aulaNum.toLowerCase().includes("aula") ||
+      segmento.toLowerCase().includes("segment") ||
+      turma.toLowerCase().includes("turm")
+    );
+    if (headerish) continue;
+
+    // Validate required fields
+    if (!assunto || !aulaNum || !segmento || !turma) {
+      throw new Error(`Linha ${i + 1}: campos obrigatórios ausentes. Preencha B (Assunto), C (Número da aula), D (Segmento) e E (Turma).`);
+    }
+
+    out.push({
+      apostila,
+      assunto,
+      aulaNum: String(aulaNum),
+      segmento,
+      turma
+    });
   }
-  return out.filter(r=> Number.isFinite(r.aula));
+  return out;
 }
 
 function refreshPlanningUI() {
@@ -997,32 +1021,55 @@ realizado.value = "";
     const t = ev.target;
     if(t && t.id === "btnSave") { ev.preventDefault(); saveCurrent(); }
   });
-  btnPrint.addEventListener("click", () => { updateKeyPreview(); window.print(); });
-  btnExport.addEventListener("click", exportJSON);
-  btnImport.addEventListener("click", importJSON);
+  btnPrint && btnPrint.addEventListener("click", () => { updateKeyPreview(); window.print(); });
+  btnExport && btnExport.addEventListener("click", exportJSON);
+  btnImport && btnImport.addEventListener("click", importJSON);
 
 
-btnPlanImport.addEventListener("click", () => {
-  // precisa selecionar a turma antes de importar, porque a planilha não tem coluna "Turma"
-  if (!turma.value) { alert("Selecione a Turma antes de importar o planejamento."); return; }
+btnPlanImport && btnPlanImport.addEventListener("click", () => {
+  if (!planFileEl) return;
   planFileEl.value = "";
   planFileEl.click();
 });
 
-planFileEl.addEventListener("change", async (ev) => {
-  const file = ev.target.files && ev.target.files[0];
-  if (!file) return;
+planFileEl && planFileEl.addEventListener("change", async () => {
   try {
-    const ext = (file.name.split(".").pop() || "").toLowerCase();
-    let rows2d = [];
-    if (ext === "csv") {
-      const text = await file.text();
-      rows2d = text.split(/\r?\n/).filter(Boolean).map(line => line.split(","));
-    } else {
-      if (typeof XLSX === "undefined") throw new Error("Biblioteca XLSX não carregou. Verifique sua conexão e recarregue a página.");
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const first = wb.SheetNames[0];
+    const file = planFileEl.files?.[0];
+    if (!file) return;
+
+    const ab = await file.arrayBuffer();
+    const wb = XLSX.read(ab, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data2d = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: "" });
+
+    const rows = parsePlanningRowsFromSheet(data2d);
+
+    // Group by Turma (coluna E) e faz upsert por turma
+    const byTurma = new Map();
+    for (const r of rows) {
+      const t = (r.turma || "").trim();
+      if (!t) continue; // parse já valida, mas por segurança
+      if (!byTurma.has(t)) byTurma.set(t, []);
+      byTurma.get(t).push(r);
+    }
+
+    for (const [t, list] of byTurma.entries()) {
+      upsertPlanRows(t, list);
+    }
+
+    // Atualiza combo de Conteúdo conforme turma/segmento selecionados
+    refreshConteudoOptions();
+
+    alert(`Planejamento importado com sucesso!\nTurmas importadas: ${[...byTurma.keys()].join(", ")}`);
+  } catch (e) {
+    console.error(e);
+    alert("Falha ao importar planejamento: " + (e?.message || e));
+  } finally {
+    planFileEl.value = "";
+  }
+});
+
+const first = wb.SheetNames[0];
       const ws = wb.Sheets[first];
       rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
     }
@@ -1037,14 +1084,14 @@ planFileEl.addEventListener("change", async (ev) => {
   }
 });
 
-btnPlanView.addEventListener("click", renderPlanningModal);
+btnPlanView && btnPlanView.addEventListener("click", renderPlanningModal);
 
 
   search.addEventListener("input", renderList);
   btnClearSearch.addEventListener("click", () => { search.value=""; renderList(); });
 
   weekSelect.addEventListener("change", renderWeekSummary);
-  btnPrintWeek.addEventListener("click", printWeekSummary);
+  btnPrintWeek && btnPrintWeek.addEventListener("click", printWeekSummary);
 
 })();
 </script>
